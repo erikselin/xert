@@ -1,18 +1,14 @@
 # XRT
 
-XRT is a language-agnostic map-reduce runtime for shared-memory systems. It
-offers a restrictive programming model focused on operational simplicity, cross
-platform compatibility and industry readiness without sacrificing performance.
-XRT operates on newline delimited datasets with mappers and reducers that are
-written in any language.
+XRT is a language-agnostic map-reduce runtime for shared-memory systems.
 
-## Installing
+## Building
 
-    TODO
+Simply run `make` in the root of the project.
 
 ## Usage
 
-    TODO
+Run `xrt --help` for usage. More details to come.
 
 ## Copyright and License
 
