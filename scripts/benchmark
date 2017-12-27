@@ -1,0 +1,26 @@
+#!/bin/bash
+
+set -x
+set -e
+
+ROOT="$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." && pwd )"
+
+XRT=$ROOT/bin/xrt
+EXAMPLES=$ROOT/examples
+
+RECORDS_PER_WORKER=10000
+DATAGEN_WORKERS=100
+
+DATA_UNIFORM=$ROOT/data-uniform
+DATA_SKEWED=$ROOT/data-skewed
+
+$XRT --workers $DATAGEN_WORKERS \
+     --mapper "python $EXAMPLES/datagen/map.py uniform $RECORDS_PER_WORKER" \
+     --output $DATA_UNIFORM
+
+$XRT --workers $DATAGEN_WORKERS \
+     --mapper "python $EXAMPLES/datagen/map.py skewed $RECORDS_PER_WORKER" \
+     --output $DATA_SKEWED
+
+rm -r $DATA_UNIFORM
+rm -r $DATA_SKEWED
