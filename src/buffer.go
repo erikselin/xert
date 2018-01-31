@@ -108,7 +108,7 @@ func (b *buffer) spill() error {
 
 // extSort ...
 func (b *buffer) externalSort() error {
-	ways := workers
+	ways := mappers
 	if ways < 2 {
 		ways = 2
 	}

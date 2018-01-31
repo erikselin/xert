@@ -16,9 +16,10 @@ import (
 )
 
 const (
-	argWorkers = "workers"
-	argMemory  = "memory"
-	argTempDir = "tempdir"
+	argMappers  = "mappers"
+	argReducers = "reducers"
+	argMemory   = "memory"
+	argTempDir  = "tempdir"
 
 	argInput   = "input"
 	argMapper  = "mapper"
@@ -33,7 +34,8 @@ var (
 	start = time.Now()
 
 	// resource defaults
-	defaultWorkers = 4
+	defaultMappers = 4
+	defaultReducers = 4
 	defaultMemory  = "256m"
 	defaultTempDir = os.TempDir()
 
@@ -42,7 +44,8 @@ var (
 	buildSha     = "unknown"
 
 	// set by cli flags or env variables
-	workers      int
+	mappers      int
+	reducers     int
 	memoryString string
 	tempDir      string
 
@@ -69,7 +72,8 @@ var (
 )
 
 func init() {
-	flag.IntVar(&workers, argWorkers, defaultWorkers, "")
+	flag.IntVar(&mappers, argMappers, defaultMappers, "")
+	flag.IntVar(&reducers, argReducers, defaultReducers, "")
 	flag.StringVar(&memoryString, argMemory, defaultMemory, "")
 	flag.StringVar(&tempDir, argTempDir, defaultTempDir, "")
 
@@ -84,9 +88,10 @@ func init() {
 		fmt.Print(`Usage: xrt [--help] [--version] <options>
 
 Resource options:
- --workers <num>  set the number of workers to <n> (default: 4)
- --memory <mem>   set the amount of allocated memory (default: 256m)
- --tempdir <dir>  set the temporary directory (default : system temporary directory)
+ --mappers <num>   set the number of mappers to <n> (default: 4)
+ --reducers <num>  set the number of reducers to <n> (default: 4)
+ --memory <mem>    set the amount of allocated memory (default: 256m)
+ --tempdir <dir>   set the temporary directory (default : system temporary directory)
 
 Job options:
  --input <file|dir>  the input file or directory
@@ -144,7 +149,7 @@ func main() {
 	mapperStart := time.Now()
 	log.Print("running mapper stage")
 	log.Print("")
-	if err := runMany(workers, mapperWorker); err != nil {
+	if err := runMany(mappers, mapperWorker); err != nil {
 		rollback(err)
 	}
 	log.Print("")
@@ -154,7 +159,7 @@ func main() {
 	if hasReducer() {
 		log.Print("running reducer stage")
 		log.Print("")
-		if err := runMany(workers, reducerWorker); err != nil {
+		if err := runMany(reducers, reducerWorker); err != nil {
 			rollback(err)
 		}
 		log.Print("")
@@ -178,8 +183,12 @@ func main() {
 func setup() error {
 	var err error
 
-	if workers <= 0 {
-		return fmt.Errorf("xrt: invalid argument -%s=%d", argWorkers, workers)
+	if mappers <= 0 {
+		return fmt.Errorf("xrt: invalid argument -%s=%d", argMappers, mappers)
+	}
+
+	if reducers <= 0 {
+		return fmt.Errorf("xrt: invalid argument -%s=%d", argReducers, reducers)
 	}
 
 	if !hasMapper() {
@@ -206,9 +215,9 @@ func setup() error {
 
 	splits = enumerate(input)
 
-	buffers = make([][]*buffer, workers)
+	buffers = make([][]*buffer, mappers)
 	for i := range buffers {
-		buffers[i] = make([]*buffer, workers)
+		buffers[i] = make([]*buffer, reducers)
 	}
 
 	if hasOutput() {
@@ -278,7 +287,8 @@ func versionString() string {
 func logConfig() {
 	log.Print("configuration:")
 	log.Print("")
-	log.Printf("  workers: %d", workers)
+	log.Printf("  mappers: %d", mappers)
+	log.Printf("  reducers: %d", reducers)
 	log.Printf("  memory: %s", memoryString)
 	log.Printf("  temporary directory: %s", tempDir)
 }
@@ -311,11 +321,11 @@ func logPlan() {
 // specific code, running the user provided commands and ensure the streams are
 // handled according to the job configuration.
 func mapperWorker(c *context) error {
-	c.log("starting mapper")
+	c.log("mapper starting")
 	defer c.log("done")
 
 	if hasReducer() {
-		bufMem := memory / (workers * workers)
+		bufMem := memory / (mappers * reducers)
 		for i := range buffers[c.workerID] {
 			buffers[c.workerID][i] = newBuffer(c.workerID, i, bufMem, tempSpill)
 		}
@@ -331,11 +341,11 @@ func mapperWorker(c *context) error {
 	}
 
 	if hasReducer() {
-		c.log("sorting")
+		c.log("sorting...")
 		for _, b := range buffers[c.workerID] {
 			b.sort()
 			if b.spills > 1 {
-				c.log("external sorting")
+				c.log("sorting spills...")
 			}
 			if err := b.externalSort(); err != nil {
 				return err
@@ -367,7 +377,7 @@ func mapperStdout(c *context, r io.ReadCloser) error {
 // worker specific code, running the user provided commands and ensure the
 // streams are handled according to the job configuration.
 func reducerWorker(c *context) error {
-	c.log("starting reducer")
+	c.log("reducer starting")
 	defer c.log("done")
 
 	return c.exec(
@@ -379,7 +389,7 @@ func reducerWorker(c *context) error {
 }
 
 func reducerStdin(c *context, w io.WriteCloser) error {
-	workerBuffers := make([]*buffer, workers)
+	workerBuffers := make([]*buffer, len(buffers))
 	for i := range buffers {
 		workerBuffers[i] = buffers[i][c.workerID]
 	}
@@ -425,13 +435,13 @@ func rollback(err error) {
 func commit() {
 	if hasOutput() {
 		if err := os.Rename(tempOutput, output); err != nil {
-			log.Print(
+			log.Printf(
 				"  error while moving output data from %s to %s - %v",
 				tempOutput,
 				output,
 				err,
 			)
-			log.Print("  temporary data directory %s was not removed", tempDir)
+			log.Printf("  temporary data directory %s was not removed", tempDir)
 			log.Print("failed")
 			os.Exit(1)
 		}

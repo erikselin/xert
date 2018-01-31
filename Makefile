@@ -14,10 +14,10 @@ PACKAGE := ${BINARY}-${BUILD_VERSION}-${GOARCH}-${GOOS}
 
 default:
 	mkdir -p bin
-	cd xrt && go build ${LDFLAGS} -o ../bin/${BINARY}
+	cd src && go build ${LDFLAGS} -o ../bin/${BINARY}
 
 test:
-	cd xrt && go test
+	cd src && go test
 #	test/error/run
 #	test/big-join/run
 #	test/word-count/run
@@ -29,7 +29,7 @@ dist: clean test
 	mkdir ${PACKAGE}
 	cp README.md ${PACKAGE}/README.md
 	cp LICENSE ${PACKAGE}/LICENSE
-	cd xrt && go build ${LDFLAGS} -o ../${PACKAGE}/${BINARY}
+	cd src && go build ${LDFLAGS} -o ../${PACKAGE}/${BINARY}
 	tar czf ${PACKAGE}.tar.gz ${PACKAGE}
 	rm -rf ${PACKAGE}
 

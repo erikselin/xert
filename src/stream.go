@@ -160,8 +160,8 @@ func parse(record []byte) (int, []byte, error) {
 		return 0, []byte{}, err
 	}
 
-	if p < 0 || workers <= p {
-		return 0, []byte{}, fmt.Errorf("key was %d - needs to be in [0, %d)", p, workers)
+	if p < 0 || reducers <= p {
+		return 0, []byte{}, fmt.Errorf("partition key was %d - needs to be in [0, %d)", p, reducers)
 	}
 
 	return p, record[stop+1 : len(record)], nil
