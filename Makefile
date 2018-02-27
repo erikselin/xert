@@ -13,26 +13,19 @@ GOOS   ?= $(shell go env GOOS)
 PACKAGE := ${BINARY}-${BUILD_VERSION}-${GOARCH}-${GOOS}
 
 default:
-	mkdir -p bin
-	cd src && go build ${LDFLAGS} -o ../bin/${BINARY}
+	go build ${LDFLAGS} -o ${BINARY}
 
 test:
-	cd src && go test
-#	test/error/run
-#	test/big-join/run
-#	test/word-count/run
-#	test/upper/run
-#	test/uniq/run
-#	test/union/run
+	go test
 
 dist: clean test
 	mkdir ${PACKAGE}
 	cp README.md ${PACKAGE}/README.md
 	cp LICENSE ${PACKAGE}/LICENSE
-	cd src && go build ${LDFLAGS} -o ../${PACKAGE}/${BINARY}
+	go build ${LDFLAGS} -o ../${PACKAGE}/${BINARY}
 	tar czf ${PACKAGE}.tar.gz ${PACKAGE}
 	rm -rf ${PACKAGE}
 
 clean:
-	rm -rf bin
+	rm -rf ${BINARY}
 	rm -f *.tar.gz

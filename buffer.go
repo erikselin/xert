@@ -12,9 +12,9 @@ import (
 
 // buffer ...
 type buffer struct {
-	head     int
-	tail     int
-	buf      []byte
+	head	 int
+	tail	 int
+	buf	  []byte
 	spills   int
 	spillDir string
 }
@@ -108,20 +108,29 @@ func (b *buffer) spill() error {
 
 // extSort ...
 func (b *buffer) externalSort() error {
+
+	// During the final merge phase we will have at most mappers*reducers open files
+	// so use this here as well. With a hard minimum of 16 for any situation where we
+	// have < 16 mappers.
 	ways := mappers
-	if ways < 2 {
-		ways = 2
+	if ways < 16 {
+		ways = 16
 	}
 
 	for b.spills > 1 {
 		newSpills := 0
 		for i := 0; i <= b.spills/ways; i++ {
-			newSpills++
 			start := i * ways
 			end := start + ways
 			if end >= b.spills {
 				end = b.spills
 			}
+
+			if end-start == 0 {
+				continue
+			}
+
+			newSpills++
 
 			scanners := make([]recordScanner, end-start)
 			for j := 0; j < end-start; j++ {
@@ -239,7 +248,7 @@ func newBuffer(mapperID, reducerID, bufMem int, tempSpill string) *buffer {
 	return &buffer{
 		head:   0,
 		tail:   bufMem,
-		buf:    make([]byte, bufMem),
+		buf:	make([]byte, bufMem),
 		spills: 0,
 		spillDir: path.Join(
 			tempSpill,

@@ -34,10 +34,10 @@ var (
 	start = time.Now()
 
 	// resource defaults
-	defaultMappers = 4
+	defaultMappers  = 4
 	defaultReducers = 4
-	defaultMemory  = "256m"
-	defaultTempDir = os.TempDir()
+	defaultMemory   = "256m"
+	defaultTempDir  = os.TempDir()
 
 	// set by ldflags at compile time
 	buildVersion = "unknown"
@@ -213,7 +213,9 @@ func setup() error {
 		return err
 	}
 
-	splits = enumerate(input)
+	if splits, err = enumerate(input); err != nil {
+		return fmt.Errorf("parsing -%s failed with error: %v", argInput, err)
+	}
 
 	buffers = make([][]*buffer, mappers)
 	for i := range buffers {

@@ -1,6 +1,6 @@
 # XRT
 
-XRT is a language-agnostic map-reduce runtime for shared-memory systems.
+XRT is a language-independent map-reduce runtime for shared-memory systems.
 
 ## Building
 
