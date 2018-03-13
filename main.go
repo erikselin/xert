@@ -61,8 +61,8 @@ var (
 	tempSpill  string
 	tempOutput string
 
-	// channel for input splits
-	splits chan *split
+	// channel for input chunks
+	inputChunks chan *chunk
 
 	// buffers for shuffle and sort
 	buffers [][]*buffer
@@ -213,7 +213,7 @@ func setup() error {
 		return err
 	}
 
-	if splits, err = enumerate(input); err != nil {
+	if inputChunks, err = enumerateChunks(input); err != nil {
 		return fmt.Errorf("parsing -%s failed with error: %v", argInput, err)
 	}
 
@@ -360,7 +360,7 @@ func mapperWorker(c *context) error {
 
 func mapperStdin(c *context, w io.WriteCloser) error {
 	if hasInput() {
-		return streamFromInput(c, w, splits)
+		return streamFromInput(c, w, inputChunks)
 	}
 	return w.Close()
 }

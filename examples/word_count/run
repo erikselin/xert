@@ -1,0 +1,15 @@
+#!/bin/bash
+
+set -e
+set -x
+
+ROOT=$(dirname "${BASH_SOURCE[0]}" )
+rm -f -r $ROOT/output
+$ROOT/../../xrt --mappers 4 \
+                --reducers 4 \
+                --memory 64m \
+                --input $ROOT/input.tsv \
+                --mapper "python3 $ROOT/map.py" \
+                --reducer "python3 $ROOT/reduce.py" \
+                --output $ROOT/output
+cat $ROOT/output/*

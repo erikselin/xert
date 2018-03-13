@@ -34,79 +34,16 @@ func streamToLog(c *context, r io.ReadCloser) error {
 }
 
 // streamFromInput ...
-func streamFromInput(
-	c *context,
-	w io.WriteCloser,
-	splits chan *split,
-) error {
-	b := make([]byte, 1)
-
-	for s := range splits {
-		if s.err != nil {
-			return c.err(s.err.Error())
+func streamFromInput(c *context, w io.WriteCloser, chunks chan *chunk) error {
+	for chunk := range chunks {
+		if chunk.err != nil {
+			return chunk.err
 		}
-
-		c.logf("processing %s [%d:%d]", s.filename, s.start, s.end)
-
-		f, err := os.Open(s.filename)
-		if err != nil {
+		c.logf("processing %s [%d:%d]", chunk.filename, chunk.start, chunk.end)
+		if err := chunk.writeTo(w); err != nil {
 			return err
-		}
-
-		if _, err := f.Seek(s.start, 0); err != nil {
-			return err
-		}
-
-		n := s.end - s.start
-		if s.start > 0 {
-			for {
-				_, err := f.Read(b)
-				n--
-
-				if err == io.EOF {
-					break
-				}
-
-				if err != nil {
-					return err
-				}
-
-				if n == 0 {
-					// TODO not sure a break is what we want here
-					break
-					//return errors.New("n <= 0")
-				}
-
-				if b[0] == recordDelimiter {
-					break
-				}
-			}
-		}
-
-		if _, err := io.CopyN(w, f, n); err != nil {
-			return err
-		}
-
-		for {
-			_, err := f.Read(b)
-			if err == io.EOF {
-				break
-			}
-
-			if err != nil {
-				return err
-			}
-
-			if _, err := w.Write(b); err != nil {
-				return err
-			}
-
-			if b[0] == recordDelimiter {
-				break
-			}
 		}
 	}
-
 	return w.Close()
 }
 

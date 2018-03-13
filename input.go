@@ -2,59 +2,93 @@ package main
 
 import (
 	"fmt"
+	"io"
 	"io/ioutil"
 	"os"
 	"path"
 	"regexp"
 )
 
-const splitSize int64 = 64 << 20 // 64mb
+const (
+	chunkSize       int64 = 64 << 20 // 64mb
+	recordSeparator byte  = '\n'
+)
 
-// split ...
-type split struct {
+type chunk struct {
 	filename string
 	start    int64
 	end      int64
 	err      error
 }
 
-// enumerate ...
-func enumerate(input string) (chan *split, error) {
-	regex := extractRegex(input)
-	r, err := regexp.Compile(regex)
+func (c *chunk) writeTo(w io.Writer) error {
+	buf := make([]byte, 1)
+	f, err := os.Open(c.filename)
+	if err != nil {
+		return err
+	}
+	if _, err := f.Seek(c.start, 0); err != nil {
+		return err
+	}
+	if c.start > 0 {
+		for {
+			c.start++
+			_, err := f.Read(buf)
+			if err == io.EOF {
+				return nil
+			}
+			if err != nil {
+				return err
+			}
+			if c.start == c.end {
+				return nil
+			}
+			if buf[0] == recordSeparator {
+				break
+			}
+		}
+	}
+	if _, err := io.CopyN(w, f, c.end-c.start); err != nil {
+		return err
+	}
+	for {
+		_, err := f.Read(buf)
+		if err == io.EOF {
+			return nil
+		}
+		if err != nil {
+			return err
+		}
+		if _, err := w.Write(buf); err != nil {
+			return err
+		}
+		if buf[0] == recordSeparator {
+			return nil
+		}
+	}
+}
+
+func enumerateChunks(input string) (chan *chunk, error) {
+	regex, err := extractRegex(input)
 	if err != nil {
 		return nil, err
 	}
-
-	root := extractRoot(input)
-	if root == "" {
-		if root, err = os.Getwd(); err != nil {
-			return nil, err
-		}
+	root, err := extractRoot(input)
+	if err != nil {
+		return nil, err
 	}
-
-	c := make(chan *split)
-
-	go func() {
-		if err := walk(c, root, r); err != nil {
-			c <- &split{
-				err: err,
-			}
-		}
-		close(c)
-	}()
-
-	return c, nil
+	chunks := make(chan *chunk)
+	go startWalk(root, regex, chunks)
+	return chunks, nil
 }
 
-func extractRoot(input string) string {
+func extractRoot(input string) (string, error) {
 	root := ""
 	part := ""
-
 	for _, c := range input {
 		switch c {
 		case '*', '?', '{', '[':
-			return root
+			return root, nil
 		case '/':
 			root = fmt.Sprintf("%s%s%c", root, part, c)
 			part = ""
@@ -62,13 +96,14 @@ func extractRoot(input string) string {
 			part = fmt.Sprintf("%s%c", part, c)
 		}
 	}
-
-	return root
+	if root == "" {
+		return os.Getwd()
+	}
+	return root, nil
 }
 
-func extractRegex(input string) string {
+func extractRegex(input string) (*regexp.Regexp, error) {
 	regex := ""
-
 	for _, c := range input {
 		switch c {
 		case '.', '$', '(', ')', '|', '+':
@@ -90,54 +125,40 @@ func extractRegex(input string) string {
 		}
 		regex = fmt.Sprintf("%s%c", regex, c)
 	}
-
-	return regex
+	return regexp.Compile(regex)
 }
 
-// walk ...
-func walk(c chan *split, filename string, regex *regexp.Regexp) error {
+func startWalk(root string, regex *regexp.Regexp, chunks chan *chunk) {
+	if err := walk(root, regex, chunks); err != nil {
+		chunks <- &chunk{"", -1, -1, err}
+	}
+	close(chunks)
+}
+
+func walk(filename string, regex *regexp.Regexp, chunks chan *chunk) error {
 	s, err := os.Stat(filename)
 	if err != nil {
 		return err
 	}
-
 	if s.Mode().IsRegular() && regex.Match([]byte(filename)) {
-		s, err := os.Stat(filename)
-		if err != nil {
-			return err
+		start := int64(0)
+		for start+chunkSize < s.Size() {
+			chunks <- &chunk{filename, start, start + chunkSize, nil}
+			start += chunkSize
 		}
-
-		var start int64
-		for start+splitSize < s.Size() {
-			c <- &split{
-				filename: filename,
-				start:    start,
-				end:      start + splitSize,
-			}
-			start += splitSize
-		}
-
-		c <- &split{
-			filename: filename,
-			start:    start,
-			end:      s.Size(),
-		}
-
+		chunks <- &chunk{filename, start, s.Size(), nil}
 		return nil
 	}
-
 	if s.Mode().IsDir() {
 		fis, err := ioutil.ReadDir(filename)
 		if err != nil {
 			return err
 		}
-
 		for _, fi := range fis {
-			if err := walk(c, path.Join(filename, fi.Name()), regex); err != nil {
+			if err := walk(path.Join(filename, fi.Name()), regex, chunks); err != nil {
 				return err
 			}
 		}
 	}
-
 	return nil
 }

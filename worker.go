@@ -61,7 +61,8 @@ func (ctx *context) exec(
 	c.Env = append(
 		os.Environ(),
 		fmt.Sprintf("WORKER_ID=%d", ctx.workerID),
-		fmt.Sprintf("PARTITIONS=%d", ctx.workers),
+		fmt.Sprintf("MAPPERS=%d", mappers),
+		fmt.Sprintf("REDUCERS=%d", reducers),
 	)
 
 	stdin, err := c.StdinPipe()

@@ -1,13 +1,18 @@
 package main
 
-import "testing"
+import (
+	"os"
+	"testing"
+)
+
+var wd, _ = os.Getwd()
 
 var extractTests = []struct {
 	in       string
 	outRoot  string
 	outRegex string
 }{
-	{"foo", "", "foo"},
+	{"foo", wd, "foo"},
 	{"foo/", "foo/", "foo/"},
 	{"foo/?", "foo/", "foo/."},
 	{"foo/ba.*", "foo/", "foo/ba\\.[^/]*"},
@@ -21,20 +26,24 @@ var extractTests = []struct {
 
 func TestExtractRoot(t *testing.T) {
 	for _, tt := range extractTests {
-		out := extractRoot(tt.in)
+		out, err := extractRoot(tt.in)
+		if err != nil {
+			t.Errorf("extractRoot(%s) returned error %v, want no error", tt.in, err)
+		}
 		if out != tt.outRoot {
 			t.Errorf("extractRoot(%s) => '%s', want '%s'", tt.in, out, tt.outRoot)
-			continue
 		}
 	}
 }
 
 func TestExtractRegex(t *testing.T) {
 	for _, tt := range extractTests {
-		out := extractRegex(tt.in)
-		if out != tt.outRegex {
+		out, err := extractRegex(tt.in)
+		if err != nil {
+			t.Errorf("extractRegex(%s) returned error %v, want no error", tt.in, err)
+		}
+		if out.String() != tt.outRegex {
 			t.Errorf("extractRegex(%s) => '%s', want '%s'", tt.in, out, tt.outRegex)
-			continue
 		}
 	}
 }
