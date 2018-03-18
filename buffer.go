@@ -7,14 +7,13 @@ import (
 	"os"
 	"path"
 	"sort"
-	"strconv"
 )
 
 // buffer ...
 type buffer struct {
-	head	 int
-	tail	 int
-	buf	  []byte
+	head     int
+	tail     int
+	buf      []byte
 	spills   int
 	spillDir string
 }
@@ -244,16 +243,12 @@ func (b *buffer) appendRecord(record []byte) {
 }
 
 // newBuffer ...
-func newBuffer(mapperID, reducerID, bufMem int, tempSpill string) *buffer {
+func newBuffer(bufMem int, spillDir string) *buffer {
 	return &buffer{
-		head:   0,
-		tail:   bufMem,
-		buf:	make([]byte, bufMem),
-		spills: 0,
-		spillDir: path.Join(
-			tempSpill,
-			strconv.Itoa(mapperID),
-			strconv.Itoa(reducerID),
-		),
+		head:     0,
+		tail:     bufMem,
+		buf:      make([]byte, bufMem),
+		spills:   0,
+		spillDir: spillDir,
 	}
 }

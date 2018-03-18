@@ -1,11 +1,9 @@
 BINARY := xrt
 
-BUILD_VERSION := 0.1.0
-BUILD_SHA     := $(shell git rev-parse --short HEAD)
+BUILD_VERSION := 0.2.0
 
-LDFLAG_VERSION := main.buildVersion=${BUILD_VERSION}
-LDFLAG_SHA     := main.buildSha=${BUILD_SHA}
-LDFLAGS        := -ldflags "-X ${LDFLAG_VERSION} -X ${LDFLAG_SHA}"
+LDFLAG_VERSION := main.version=${BUILD_VERSION}
+LDFLAGS        := -ldflags "-X ${LDFLAG_VERSION}"
 
 GOARCH ?= $(shell go env GOARCH)
 GOOS   ?= $(shell go env GOOS)
