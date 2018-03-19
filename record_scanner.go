@@ -26,12 +26,10 @@ type memoryScanner struct {
 
 func (s *memoryScanner) next() bool {
 	s.index++
-
 	more := s.index < s.buf.Len()
 	if more {
 		s.nextRecord = s.buf.readRecord(s.index)
 	}
-
 	return more
 }
 
@@ -59,7 +57,6 @@ func (s *fileScanner) next() bool {
 	if s.f == nil || s.e != nil {
 		return false
 	}
-
 	n := 0
 	for n < 8 {
 		m, err := s.r.Read(s.buf[n:8])
@@ -71,7 +68,6 @@ func (s *fileScanner) next() bool {
 		}
 		n += m
 	}
-
 	s.recordSize = int(s.buf[0]) +
 		int(s.buf[1])<<8 +
 		int(s.buf[2])<<16 +
@@ -80,11 +76,9 @@ func (s *fileScanner) next() bool {
 		int(s.buf[5])<<40 +
 		int(s.buf[6])<<48 +
 		int(s.buf[7])<<56
-
 	if len(s.buf) < s.recordSize {
 		s.buf = make([]byte, 4096*(s.recordSize/4096)+4096)
 	}
-
 	n = 0
 	for n < s.recordSize {
 		m, err := s.r.Read(s.buf[n:s.recordSize])
@@ -94,7 +88,6 @@ func (s *fileScanner) next() bool {
 		}
 		n += m
 	}
-
 	return true
 }
 
@@ -123,12 +116,9 @@ func newRecordScanners(buf *buffer) (*memoryScanner, *fileScanner) {
 		index: -1,
 		buf:   buf,
 	}
-
 	var fbuf *fileScanner
-
 	if buf.spills > 0 {
 		fbuf = newFileScanner(path.Join(buf.spillDir, "spill-0"))
 	}
-
 	return mbuf, fbuf
 }

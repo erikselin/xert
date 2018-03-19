@@ -41,7 +41,6 @@ func (b *buffer) Less(i, j int) bool {
 // add ...
 func (b *buffer) add(record []byte) error {
 	recordSize := 2*8 + len(record)
-
 	if len(b.buf) < recordSize {
 		return fmt.Errorf(
 			"record is too large to fit in memory - required: %db but "+
@@ -50,15 +49,12 @@ func (b *buffer) add(record []byte) error {
 			len(b.buf),
 		)
 	}
-
 	if b.free() < recordSize {
 		if err := b.spill(); err != nil {
 			return err
 		}
 	}
-
 	b.appendRecord(record)
-
 	return nil
 }
 
@@ -74,22 +70,16 @@ func (b *buffer) spill() error {
 		b.tail = len(b.buf)
 		b.spills++
 	}()
-
 	sort.Sort(b)
-
 	if err := os.MkdirAll(b.spillDir, 0700); err != nil {
 		return err
 	}
-
 	filename := path.Join(b.spillDir, fmt.Sprintf("spill-%d", b.spills))
 	w, err := os.Create(filename)
-
 	if err != nil {
 		return err
 	}
-
 	wb := bufio.NewWriter(w)
-
 	for i := 0; i < b.Len(); i++ {
 		p := b.readInt(i * 8)
 		s := b.readInt(p)
@@ -97,17 +87,14 @@ func (b *buffer) spill() error {
 			return err
 		}
 	}
-
 	if err := wb.Flush(); err != nil {
 		return err
 	}
-
 	return w.Close()
 }
 
 // extSort ...
 func (b *buffer) externalSort() error {
-
 	// During the final merge phase we will have at most mappers*reducers open files
 	// so use this here as well. With a hard minimum of 16 for any situation where we
 	// have < 16 mappers.
@@ -115,7 +102,6 @@ func (b *buffer) externalSort() error {
 	if ways < 16 {
 		ways = 16
 	}
-
 	for b.spills > 1 {
 		newSpills := 0
 		for i := 0; i <= b.spills/ways; i++ {
@@ -124,30 +110,24 @@ func (b *buffer) externalSort() error {
 			if end >= b.spills {
 				end = b.spills
 			}
-
 			if end-start == 0 {
 				continue
 			}
-
 			newSpills++
-
 			scanners := make([]recordScanner, end-start)
 			for j := 0; j < end-start; j++ {
 				filename := path.Join(b.spillDir, fmt.Sprintf("spill-%d", j+start))
 				scanners[j] = newFileScanner(filename)
 			}
-
 			m, err := newMerger(scanners)
 			if err != nil {
 				return err
 			}
-
 			mergeFilename := path.Join(b.spillDir, "merge")
 			f, err := os.Create(mergeFilename)
 			if err != nil {
 				return err
 			}
-
 			w := bufio.NewWriter(f)
 			buf := make([]byte, 8)
 			for m.next() {
@@ -168,35 +148,28 @@ func (b *buffer) externalSort() error {
 					return err
 				}
 			}
-
 			if err := m.err(); err != nil {
 				return err
 			}
-
 			if err := w.Flush(); err != nil {
 				return err
 			}
-
 			if err := f.Close(); err != nil {
 				return err
 			}
-
 			for j := 0; j < end-start; j++ {
 				filename := path.Join(b.spillDir, fmt.Sprintf("spill-%d", j+start))
 				if err := os.Remove(filename); err != nil {
 					return err
 				}
 			}
-
 			filename := path.Join(b.spillDir, fmt.Sprintf("spill-%d", i))
 			if err := os.Rename(mergeFilename, filename); err != nil {
 				return err
 			}
-
 		}
 		b.spills = newSpills
 	}
-
 	return nil
 }
 
