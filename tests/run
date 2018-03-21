@@ -1,0 +1,81 @@
+#!/bin/bash
+
+set -e
+set +x
+
+ROOT=$(dirname "${BASH_SOURCE[0]}" )
+
+export PYTHONHASHSEED=0
+
+cores=4
+memory=1g
+records=1000
+
+datasets=(
+	"sorted-asc"
+	"sorted-desc"
+	"single"
+	"uniform"
+	"skewed"
+)
+
+for dataset in "${datasets[@]}"; do
+    input=$ROOT/data-$dataset.tsv
+	if [ ! -f $input ]; then
+        echo "generating $input"
+		python3 $ROOT/datagen.py $dataset $records $input
+	fi
+
+    tst=string-search
+    echo "============ $dataset-$tst ============"
+    output=$ROOT/output-$tst-$dataset
+    log=$ROOT/log-$tst-$dataset.log
+    profile=$ROOT/profile-$tst-$dataset.profile
+    rm -f -r $output
+    rm -f $log
+    rm -f $profile
+    time -p $ROOT/../xrt --mappers $cores \
+                      --reducers $cores \
+                      --memory $memory \
+                      --input $input \
+                      --mapper "python3 $ROOT/$tst/map.py" \
+                      --output $output &> $log \
+                      --profile $profile
+    python3 $ROOT/$tst/check.py $input $output
+
+    tst=parallel-sort
+    echo "============ $dataset-$tst ============"
+    output=$ROOT/output-$tst-$dataset
+    log=$ROOT/log-$tst-$dataset.log
+    profile=$ROOT/profile-$tst-$dataset.profile
+    rm -f -r $output
+    rm -f $log
+    rm -f $profile
+    time -p $ROOT/../xrt --mappers $cores \
+                      --reducers $cores \
+                      --memory $memory \
+                      --input $input \
+                      --mapper "python3 $ROOT/$tst/map.py" \
+                      --reducer "python3 $ROOT/$tst/reduce.py" \
+                      --output $output &> $log \
+                      --profile $profile
+    python3 $ROOT/$tst/check.py $input $output
+
+    tst=word-count
+    echo "============ $dataset-$tst ============"
+    output=$ROOT/output-$tst-$dataset
+    log=$ROOT/log-$tst-$dataset.log
+    profile=$ROOT/profile-$tst-$dataset.profile
+    rm -f -r $output
+    rm -f $log
+    rm -f $profile
+    time -p $ROOT/../xrt --mappers $cores \
+                      --reducers $cores \
+                      --memory $memory \
+                      --input $input \
+                      --mapper "python3 $ROOT/$tst/map.py" \
+                      --reducer "python3 $ROOT/$tst/reduce.py" \
+                      --output $output &> $log \
+                      --profile $profile
+    python3 $ROOT/$tst/check.py $input $output
+done

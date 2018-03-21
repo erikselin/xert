@@ -1,4 +1,7 @@
 .DS_Store
 xrt
 xrt-*
-examples/**/output
+tests/data-*
+tests/log-*
+tests/output-*
+tests/profile-*

@@ -10,6 +10,7 @@ import (
 	"os"
 	"os/signal"
 	"path"
+	"runtime/pprof"
 	"strconv"
 	"sync"
 	"time"
@@ -21,6 +22,7 @@ const (
 	argMappers      = "mappers"
 	argMemoryString = "memory"
 	argOutput       = "output"
+	argProfile      = "profile"
 	argReducer      = "reducer"
 	argReducers     = "reducers"
 	argShowVersion  = "version"
@@ -45,6 +47,7 @@ var (
 	input        string
 	mapper       string
 	output       string
+	profile      string
 	reducer      string
 	showVersion  bool
 
@@ -86,6 +89,7 @@ func init() {
 	flag.IntVar(&mappers, argMappers, defaultMappers, "")
 	flag.StringVar(&memoryString, argMemoryString, defaultMemoryString, "")
 	flag.StringVar(&output, argOutput, "", "")
+	flag.StringVar(&profile, argProfile, "", "")
 	flag.StringVar(&reducer, argReducer, "", "")
 	flag.IntVar(&reducers, argReducers, defaultReducers, "")
 	flag.BoolVar(&showVersion, argShowVersion, false, "")
@@ -107,6 +111,15 @@ func main() {
 		fmt.Println(err)
 		os.Exit(1)
 	}
+	if profile != "" {
+		f, err := os.Create(profile)
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+		pprof.StartCPUProfile(f)
+		defer pprof.StopCPUProfile()
+	}
 	run()
 }
 
@@ -117,6 +130,7 @@ func usage() {
 	fmt.Printf(" --%s <num>   number of mappers (default: %d)\n", argMappers, defaultMappers)
 	fmt.Printf(" --%s <mem>    memory limit (default: %s)\n", argMemoryString, defaultMemoryString)
 	fmt.Printf(" --%s <dir>    output directory\n", argOutput)
+	fmt.Printf(" --%s <file>  profile file\n", argProfile)
 	fmt.Printf(" --%s <cmd>   reducer command\n", argReducer)
 	fmt.Printf(" --%s <num>  number of reducers (default: %d)\n", argReducers, defaultReducers)
 	fmt.Printf(" --%s <dir>   temporary directory (default : %s)\n", argTempDir, defaultTempDir)
@@ -342,7 +356,7 @@ func rollback(err error) {
 		// BUG this will break on windows since it does not allow removal of open files and by the
 		// time this is called it is possible fds in the tempdir are still open.
 		if err := os.RemoveAll(tempDir); err != nil {
-			log.Print("failed to remove temporary data directory %s - %v", tempDir, err)
+			log.Printf("failed to remove temporary data directory %s - %v", tempDir, err)
 		}
 		log.Print("failed")
 		os.Exit(1)
@@ -362,7 +376,7 @@ func commit() {
 		}
 	}
 	if err := os.RemoveAll(tempDir); err != nil {
-		log.Print("  failed to remove temporary data directory %s - %v", tempDir, err)
+		log.Printf("  failed to remove temporary data directory %s - %v", tempDir, err)
 	}
 }
 

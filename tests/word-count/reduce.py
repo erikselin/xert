@@ -1,6 +1,9 @@
 from sys import stdin, stdout
 
 word = stdin.readline()
+if not word:
+    exit()
+
 count = 1
 for next in stdin:
     if word != next:

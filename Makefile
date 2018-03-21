@@ -13,10 +13,11 @@ PACKAGE := ${BINARY}-${BUILD_VERSION}-${GOARCH}-${GOOS}
 default:
 	go build ${LDFLAGS} -o ${BINARY}
 
-test:
+test: default
 	go test
+	tests/run
 
-dist: clean test
+dist: test
 	mkdir ${PACKAGE}
 	cp README.md ${PACKAGE}/README.md
 	cp LICENSE ${PACKAGE}/LICENSE
@@ -27,3 +28,7 @@ dist: clean test
 clean:
 	rm -rf ${BINARY}
 	rm -f *.tar.gz
+	rm -f tests/data-*
+	rm -f tests/log-*
+	rm -f tests/profile-*
+	rm -rf tests/output-*

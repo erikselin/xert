@@ -6,11 +6,12 @@ import (
 	"io/ioutil"
 	"os"
 	"path"
+	"path/filepath"
 	"regexp"
 )
 
 const (
-	chunkSize       int64 = 64 << 20 // 64mb
+	chunkSize       int64 = 16 << 20 // 16mb
 	recordSeparator byte  = '\n'
 )
 
@@ -21,7 +22,7 @@ type chunk struct {
 	err      error
 }
 
-func (c *chunk) writeTo(w io.Writer) error {
+func (c *chunk) writeTo(w io.Writer) error { // TODO closer?
 	buf := make([]byte, 1)
 	f, err := os.Open(c.filename)
 	if err != nil {
@@ -35,13 +36,13 @@ func (c *chunk) writeTo(w io.Writer) error {
 			c.start++
 			_, err := f.Read(buf)
 			if err == io.EOF {
-				return nil
+				return f.Close()
 			}
 			if err != nil {
 				return err
 			}
 			if c.start == c.end {
-				return nil
+				return f.Close()
 			}
 			if buf[0] == recordSeparator {
 				break
@@ -54,7 +55,7 @@ func (c *chunk) writeTo(w io.Writer) error {
 	for {
 		_, err := f.Read(buf)
 		if err == io.EOF {
-			return nil
+			return f.Close()
 		}
 		if err != nil {
 			return err
@@ -63,17 +64,21 @@ func (c *chunk) writeTo(w io.Writer) error {
 			return err
 		}
 		if buf[0] == recordSeparator {
-			return nil
+			return f.Close()
 		}
 	}
 }
 
 func enumerateChunks(input string) (chan *chunk, error) {
-	regex, err := extractRegex(input)
+	abs, err := filepath.Abs(input)
 	if err != nil {
 		return nil, err
 	}
-	root, err := extractRoot(input)
+	regex, err := extractRegex(abs)
+	if err != nil {
+		return nil, err
+	}
+	root, err := extractRoot(abs)
 	if err != nil {
 		return nil, err
 	}

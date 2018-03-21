@@ -28,7 +28,9 @@ func (s *memoryScanner) next() bool {
 	s.index++
 	more := s.index < s.buf.Len()
 	if more {
-		s.nextRecord = s.buf.readRecord(s.index)
+		p := readInt(s.buf.buf, s.index*8)
+		l := readInt(s.buf.buf, p)
+		s.nextRecord = s.buf.buf[p+8 : p+8+l]
 	}
 	return more
 }
@@ -68,14 +70,7 @@ func (s *fileScanner) next() bool {
 		}
 		n += m
 	}
-	s.recordSize = int(s.buf[0]) +
-		int(s.buf[1])<<8 +
-		int(s.buf[2])<<16 +
-		int(s.buf[3])<<24 +
-		int(s.buf[4])<<32 +
-		int(s.buf[5])<<40 +
-		int(s.buf[6])<<48 +
-		int(s.buf[7])<<56
+	s.recordSize = readInt(s.buf, 0)
 	if len(s.buf) < s.recordSize {
 		s.buf = make([]byte, 4096*(s.recordSize/4096)+4096)
 	}
