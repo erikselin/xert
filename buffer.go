@@ -35,15 +35,15 @@ func (b *buffer) Less(i, j int) bool {
 // add ...
 func (b *buffer) add(record []byte) error {
 	recordSize := 2*8 + len(record)
-	if len(b.buf) < recordSize {
-		return fmt.Errorf(
-			"record is too large to fit in memory - required: %db but "+
-				"buffer memory can only hold %db",
-			recordSize,
-			len(b.buf),
-		)
-	}
 	if b.free() < recordSize {
+		if len(b.buf) < recordSize {
+			return fmt.Errorf(
+				"record is too large to fit in memory - required: %db but "+
+					"buffer memory can only hold %db",
+				recordSize,
+				len(b.buf),
+			)
+		}
 		if err := b.spill(); err != nil {
 			return err
 		}
