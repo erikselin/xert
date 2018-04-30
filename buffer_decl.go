@@ -10,7 +10,7 @@ func readInt(b []byte, i int) int
 func writeInt(b []byte, i int, n int)
 
 //go:noescape
-func compare(b []byte, i int, j int) int
+func swap(b []byte, i int, j int)
 
 //go:noescape
-func swap(b []byte, i int, j int)
+func compare(b []byte, i int, j int) int
