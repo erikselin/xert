@@ -51,16 +51,7 @@ TEXT ·compare(SB), NOSPLIT, $0-48
 	MOVQ	(SI), BX
 	ADDQ	$8, SI
 	ADDQ	$8, DI
-	LEAQ	ret+40(FP), R9
-	JMP	cmpbody<>(SB)
-
-// input:
-//   SI = a
-//   DI = b
-//   BX = alen
-//   DX = blen
-//   R9 = address of output word (stores -1/0/1 here)
-TEXT cmpbody<>(SB),NOSPLIT,$0-0
+// -- cmpbody ------------------------------
 	CMPQ	SI, DI
 	JEQ	allsame
 	CMPQ	BX, DX
@@ -68,6 +59,28 @@ TEXT cmpbody<>(SB),NOSPLIT,$0-0
 	CMOVQLT	BX, R8
 	CMPQ	R8, $16
 	JB	diff0to15mem
+	CMPQ	R8, $32
+	JB	loop
+big_loop:
+	MOVOU	(SI), X0
+	MOVOU	(DI), X1
+	PCMPEQB	X0, X1
+	PMOVMSKB	X1, AX
+	XORQ	$0xffff, AX
+	JNE	diff16reg
+	MOVOU	16(SI), X0
+	MOVOU	16(DI), X1
+	PCMPEQB	X0, X1
+	PMOVMSKB	X1, AX
+	XORQ	$0xffff, AX
+	JNE	diff32reg
+	ADDQ	$32, SI
+	ADDQ	$32, DI
+	SUBQ	$32, R8
+	CMPQ	R8, $32
+	JAE	big_loop
+	CMPQ	R8, $16
+	JB	diff0to15reg
 loop:
 	MOVOU	(SI), X0
 	MOVOU	(DI), X1
@@ -149,6 +162,9 @@ diff0to15reg:
 	XORQ	$0xffff, AX
 	JNE	diff16reg
 	JMP	allsame
+diff32reg:
+	ADDQ	$16, SI
+	ADDQ	$16, DI
 diff16reg:
 	BSFQ	AX, BX
 	MOVB	(SI)(BX*1), CX
@@ -163,8 +179,8 @@ diff8reg:
 diff4reg:
 	CMPW	R10, R11
 	JNE	diff2reg
-	SHRQ	$16, R10
-	SHRQ	$16, R11
+	SHRL	$16, R10
+	SHRL	$16, R11
 	CMPW	R10, R11
 diff2reg:
 	JA	diff2regA
@@ -181,11 +197,11 @@ allsame:
 	CMPQ	BX, DX
 	JB	below
 	JA	above
-	MOVQ	$0, (R9)
+	MOVQ	$0, ret+40(FP)
 	RET
 below:
-	MOVQ	$-1, (R9)
+	MOVQ	$-1, ret+40(FP)
 	RET
 above:
-	MOVQ	$1, (R9)
+	MOVQ	$1, ret+40(FP)
 	RET
