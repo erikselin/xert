@@ -28,9 +28,17 @@ func (s *memoryScanner) next() bool {
 	s.index++
 	more := s.index < s.buf.Len()
 	if more {
-		p := readInt(s.buf.buf, s.index*8)
-		l := readInt(s.buf.buf, p)
-		s.nextRecord = s.buf.buf[p+8 : p+8+l]
+		l := readInt(s.buf.buf, s.index*32)
+		s.nextRecord = make([]byte, l)
+		pl := 16
+		if l < pl {
+			pl = l
+		}
+		copy(s.nextRecord[0:pl], s.buf.buf[s.index*32+8:s.index*32+8+pl])
+		if l > 16 {
+			p := readInt(s.buf.buf, s.index*32+24)
+			copy(s.nextRecord[16:l], s.buf.buf[p:p+l-16])
+		}
 	}
 	return more
 }

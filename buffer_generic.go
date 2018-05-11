@@ -27,17 +27,31 @@ func writeInt(b []byte, i, n int) {
 }
 
 func compare(b []byte, i, j int) int {
-	pi := readInt(b, i*8)
-	si := readInt(b, pi)
-	pj := readInt(b, j*8)
-	sj := readInt(b, pj)
-	return bytes.Compare(b[pi+8:pi+8+si], b[pj+8:pj+8+sj])
+	si := readInt(b, i*32)
+	spi := 16
+	if si < spi {
+		spi = si
+	}
+	sj := readInt(b, j*32)
+	spj := 16
+	if sj < spj {
+		spj = sj
+	}
+	n := bytes.Compare(b[i*32+8:i*32+8+spi], b[j*32+8:j*32+8+spj])
+	if n == 0 && (si > 16 || sj > 16) {
+		si -= spi
+		sj -= spj
+		pi := readInt(b, i*32+24)
+		pj := readInt(b, j*32+24)
+		n = bytes.Compare(b[pi:pi+si], b[pj:pj+sj])
+	}
+	return n
 }
 
 func swap(buf []byte, i, j int) {
-	tmp := make([]byte, 8)
-	bi := buf[i*8 : i*8+8]
-	bj := buf[j*8 : j*8+8]
+	tmp := make([]byte, 32)
+	bi := buf[i*32 : i*32+32]
+	bj := buf[j*32 : j*32+32]
 	copy(tmp, bi)
 	copy(bi, bj)
 	copy(bj, tmp)

@@ -19,7 +19,7 @@ type buffer struct {
 
 // Len ...
 func (b *buffer) Len() int {
-	return b.head / 8
+	return b.head / 32
 }
 
 // Swap ...
@@ -34,7 +34,10 @@ func (b *buffer) Less(i, j int) bool {
 
 // add ...
 func (b *buffer) add(record []byte) error {
-	recordSize := 2*8 + len(record)
+	recordSize := 16 + len(record)
+	if recordSize < 32 {
+		recordSize = 32
+	}
 	if b.free() < recordSize {
 		if len(b.buf) < recordSize {
 			return fmt.Errorf(
@@ -74,12 +77,22 @@ func (b *buffer) spill() error {
 		return err
 	}
 	wb := bufio.NewWriter(w)
-	for i := 0; i < b.Len(); i++ {
-		p := readInt(b.buf, i*8)
-		s := readInt(b.buf, p)
-		if _, err := wb.Write(b.buf[p : p+8+s]); err != nil {
+	s := &memoryScanner{
+		index: -1,
+		buf:   b,
+	}
+	nb := make([]byte, 8)
+	for s.next() {
+		writeInt(nb, 0, len(s.record()))
+		if _, err := wb.Write(nb); err != nil {
 			return err
 		}
+		if _, err := wb.Write(s.record()); err != nil {
+			return err
+		}
+	}
+	if err := s.err(); err != nil {
+		return err
 	}
 	if err := wb.Flush(); err != nil {
 		return err
@@ -166,11 +179,19 @@ func (b *buffer) free() int {
 }
 
 func (b *buffer) appendRecord(record []byte) {
-	b.tail -= len(record)
-	copy(b.buf[b.tail:b.tail+len(record)], record)
-	b.tail -= 8
-	writeInt(b.buf, b.tail, len(record))
-	writeInt(b.buf, b.head, b.tail)
+	writeInt(b.buf, b.head, len(record))
+	b.head += 8
+	n := 16
+	if len(record) < 16 {
+		n = len(record)
+	}
+	copy(b.buf[b.head:b.head+n], record[0:n])
+	b.head += 16
+	if len(record) > 16 {
+		b.tail = b.tail - len(record) + 16
+		copy(b.buf[b.tail:b.tail+len(record)-16], record[16:len(record)])
+		writeInt(b.buf, b.head, b.tail)
+	}
 	b.head += 8
 }
 
