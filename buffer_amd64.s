@@ -61,23 +61,7 @@ TEXT ·compare(SB), NOSPLIT, $0-48
 	PMOVMSKB	X1, R9
 	XORQ	$0xffff, R9
 	JNE	diff_prefix
-	JMP	equal_prefix
-
-
-
-diff_prefix:
-	BSFQ	R9, R10
-	CMPQ	R10, R8
-	JA	allsame
-	MOVB	8(SI)(R10*1), CX
-	CMPB	CX, 8(DI)(R10*1)
-	JA	above
-	JB	below
-	JMP	allsame
-// -- cmpbody ------------------------------
-	// CMPQ	SI, DI
-	// JEQ	allsame
-equal_prefix:
+// equal prefix - enter looping
 	CMPQ	R8, $16
 	JBE	allsame
 	SUBQ	$16, R8
@@ -122,6 +106,15 @@ loop:
 	CMPQ	R8, $16
 	JB	diff0to15reg
 	JMP	loop
+diff_prefix:
+	BSFQ	R9, R10
+	CMPQ	R10, R8
+	JAE	allsame
+	MOVB	8(SI)(R10*1), CX
+	CMPB	CX, 8(DI)(R10*1)
+	JA	above
+	JB	below
+	JMP	allsame
 diff0to15mem:
 	CMPQ	R8, $8
 	JB	diff0to7mem

@@ -77,17 +77,9 @@ func (b *buffer) spill() error {
 		return err
 	}
 	wb := bufio.NewWriter(w)
-	s := &memoryScanner{
-		index: -1,
-		buf:   b,
-	}
-	nb := make([]byte, 8)
+	s := newMemoryScanner(b)
 	for s.next() {
-		writeInt(nb, 0, len(s.record()))
-		if _, err := wb.Write(nb); err != nil {
-			return err
-		}
-		if _, err := wb.Write(s.record()); err != nil {
+		if err := writeRecord(wb, s.lastRecord(), s.nextRecord()); err != nil {
 			return err
 		}
 	}
@@ -109,7 +101,6 @@ func (b *buffer) externalSort() error {
 	if ways < 16 {
 		ways = 16
 	}
-	buf := make([]byte, 8)
 	for b.spills > 1 {
 		newSpills := 0
 		for i := 0; i <= b.spills/ways; i++ {
@@ -122,7 +113,7 @@ func (b *buffer) externalSort() error {
 				continue
 			}
 			newSpills++
-			scanners := make([]recordScanner, end-start)
+			scanners := make([]scanner, end-start)
 			for j := 0; j < end-start; j++ {
 				filename := path.Join(b.spillDir, fmt.Sprintf("spill-%d", j+start))
 				scanners[j] = newFileScanner(filename)
@@ -136,22 +127,16 @@ func (b *buffer) externalSort() error {
 			if err != nil {
 				return err
 			}
-			w := bufio.NewWriter(f)
+			wb := bufio.NewWriter(f)
 			for m.next() {
-				r := m.record()
-				n := len(r)
-				writeInt(buf, 0, n)
-				if _, err := w.Write(buf); err != nil {
-					return err
-				}
-				if _, err := w.Write(r); err != nil {
+				if err := writeRecord(wb, m.lastRecord(), m.nextRecord()); err != nil {
 					return err
 				}
 			}
 			if err := m.err(); err != nil {
 				return err
 			}
-			if err := w.Flush(); err != nil {
+			if err := wb.Flush(); err != nil {
 				return err
 			}
 			if err := f.Close(); err != nil {
@@ -204,4 +189,36 @@ func newBuffer(bufMem int, spillDir string) *buffer {
 		spills:   0,
 		spillDir: spillDir,
 	}
+}
+
+func writeRecord(w *bufio.Writer, lst, nxt []byte) error {
+	m := len(lst)
+	if len(nxt) < m {
+		m = len(nxt)
+	}
+	pn := 0
+	for i := 0; i < m; i++ {
+		if lst[i] != nxt[i] {
+			break
+		}
+		pn++
+	}
+	if err := writeVarInt(w, pn); err != nil {
+		return err
+	}
+	if err := writeVarInt(w, len(nxt)-pn); err != nil {
+		return err
+	}
+	_, err := w.Write(nxt[pn:len(nxt)])
+	return err
+}
+
+func writeVarInt(w *bufio.Writer, n int) error {
+	for n >= 0x80 {
+		if err := w.WriteByte(byte(n) | 0x80); err != nil {
+			return err
+		}
+		n >>= 7
+	}
+	return w.WriteByte(byte(n))
 }

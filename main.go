@@ -177,6 +177,37 @@ func setup() (err error) {
 	return nil
 }
 
+// parseMemory takes a string representing a memory amount and converts it into
+// a integer representign the number of bytes.
+// For example:
+//    parseMemory("1k") = 1024
+//    parseMemory("1k") = 1048576
+// -1 is returned if a bad memory string was provided.
+func parseMemory(v string) int {
+	var m uint
+	switch v[len(v)-1] {
+	case 'b':
+		m = 0
+	case 'k':
+		m = 10
+	case 'm':
+		m = 20
+	case 'g':
+		m = 30
+	case 't':
+		m = 40
+	case 'p':
+		m = 50
+	default:
+		return -1
+	}
+	n, err := strconv.Atoi(v[0 : len(v)-1])
+	if err != nil {
+		return -1
+	}
+	return n << m
+}
+
 func run() {
 	startInterruptHandler()
 	log.Print("")

@@ -5,51 +5,62 @@ import "bytes"
 // merger joins the in-order streams of records from multiple bufferScanners
 // into a single in-order stream of records.
 type merger struct {
-	nextRecord recordScanner
-	nextError  error
-	tail       int
-	heap       []recordScanner
+	lst  scanner
+	nxt  scanner
+	e    error
+	tail int
+	heap []scanner
 }
 
 // next ...
 func (m *merger) next() bool {
-	if m.nextRecord != nil && m.nextRecord.next() {
-		m.insert(m.nextRecord)
+	m.lst = m.nxt
+	if m.nxt != nil && m.nxt.next() {
+		if bytes.Compare(m.nxt.lastRecord(), m.nxt.nextRecord()) == 0 {
+			return true
+		}
+		m.push(m.nxt)
 	}
 	if m.tail < 0 {
 		return false
 	}
-	m.nextRecord = m.root()
-	if err := m.nextRecord.err(); err != nil {
-		m.nextError = err
+	m.nxt = m.pop()
+	if err := m.nxt.err(); err != nil {
+		m.e = err
 		return false
 	}
 	return true
 }
 
-// record ...
-func (m *merger) record() []byte {
-	return m.nextRecord.record()
+func (m *merger) nextRecord() []byte {
+	return m.nxt.nextRecord()
+}
+
+func (m *merger) lastRecord() []byte {
+	if m.lst == nil {
+		return []byte{}
+	}
+	return m.lst.lastRecord()
 }
 
 // err ...
 func (m *merger) err() error {
-	return m.nextError
+	return m.e
 }
 
-// insert ...
-func (m *merger) insert(s recordScanner) {
+// push ...
+func (m *merger) push(s scanner) {
 	m.tail++
 	i := m.tail
-	for i > 0 && bytes.Compare(s.record(), m.heap[(i-1)/2].record()) < 0 {
+	for i > 0 && bytes.Compare(s.nextRecord(), m.heap[(i-1)/2].nextRecord()) < 0 {
 		m.heap[i] = m.heap[(i-1)/2]
 		i = (i - 1) / 2
 	}
 	m.heap[i] = s
 }
 
-// root ...
-func (m *merger) root() recordScanner {
+// pop ...
+func (m *merger) pop() scanner {
 	root := m.heap[0]
 	m.tail--
 	if m.tail >= 0 {
@@ -59,15 +70,15 @@ func (m *merger) root() recordScanner {
 		rightChild := 2*i + 2
 		for leftChild <= m.tail {
 			minChild := leftChild
-			minRecord := m.heap[leftChild].record()
+			minRecord := m.heap[leftChild].nextRecord()
 			if rightChild <= m.tail {
-				rightRecord := m.heap[rightChild].record()
+				rightRecord := m.heap[rightChild].nextRecord()
 				if bytes.Compare(rightRecord, minRecord) < 0 {
 					minChild = rightChild
-					minRecord = m.heap[rightChild].record()
+					minRecord = m.heap[rightChild].nextRecord()
 				}
 			}
-			if bytes.Compare(m.heap[i].record(), minRecord) <= 0 {
+			if bytes.Compare(m.heap[i].nextRecord(), minRecord) <= 0 {
 				break
 			}
 			tmp := m.heap[i]
@@ -82,15 +93,14 @@ func (m *merger) root() recordScanner {
 }
 
 // newMerger ...
-func newMerger(scanners []recordScanner) (*merger, error) {
+func newMerger(scanners []scanner) (*merger, error) {
 	m := &merger{
-		nextRecord: nil,
-		tail:       -1,
-		heap:       make([]recordScanner, len(scanners)),
+		tail: -1,
+		heap: make([]scanner, len(scanners)),
 	}
 	for _, s := range scanners {
 		if s.next() {
-			m.insert(s)
+			m.push(s)
 		}
 		if err := s.err(); err != nil {
 			return nil, err

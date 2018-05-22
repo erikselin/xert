@@ -2,13 +2,18 @@ package main
 
 import (
 	"bufio"
+	"bytes"
 	"fmt"
 	"io"
 	"os"
 	"path"
+	"strconv"
 )
 
-const recordDelimiter = '\n'
+const (
+	recordDelimiter = '\n'
+	keyDelimiter    = '\t'
+)
 
 func logStream(c context, r io.ReadCloser) error {
 	s := bufio.NewScanner(r)
@@ -66,14 +71,29 @@ func intermediateMapStream(c context, r io.ReadCloser, buffers []*buffer) error 
 	return s.Err()
 }
 
+func parse(record []byte) (int, []byte, error) {
+	stop := bytes.IndexByte(record, keyDelimiter)
+	if stop == -1 {
+		stop = len(record)
+	}
+	p, err := strconv.Atoi(string(record[0:stop]))
+	if err != nil {
+		return 0, []byte{}, err
+	}
+	if p < 0 || reducers <= p {
+		return 0, []byte{}, fmt.Errorf("partition key was %d - needs to be in [0, %d)", p, reducers)
+	}
+	return p, record[stop+1 : len(record)], nil
+}
+
 func intermediateReduceStream(c context, w io.WriteCloser, buffers []*buffer) error {
 	wb := bufio.NewWriter(w)
-	scanners := make([]recordScanner, 0)
+	scanners := make([]scanner, 0)
 	for _, b := range buffers {
-		mbuf, fbuf := newRecordScanners(b)
-		scanners = append(scanners, mbuf)
-		if fbuf != nil {
-			scanners = append(scanners, fbuf)
+		scanners = append(scanners, newMemoryScanner(b))
+		if b.spills > 0 {
+			filename := path.Join(b.spillDir, "spill-0")
+			scanners = append(scanners, newFileScanner(filename))
 		}
 	}
 	m, err := newMerger(scanners)
@@ -81,7 +101,7 @@ func intermediateReduceStream(c context, w io.WriteCloser, buffers []*buffer) er
 		return err
 	}
 	for m.next() {
-		if _, err := wb.Write(m.record()); err != nil {
+		if _, err := wb.Write(m.nextRecord()); err != nil {
 			return err
 		}
 		if err := wb.WriteByte(recordDelimiter); err != nil {
