@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>xrtproject.io</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.7.1/css/bulma.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.14.0/themes/prism.min.css">
+    <script defer src="https://use.fontawesome.com/releases/v5.0.7/js/all.js"></script>
+    <script defer src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.14.0/prism.min.js"></script>
+    <script defer src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.14.0/components/prism-python.min.js"></script>
+    <script defer src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.14.0/components/prism-bash.min.js"></script>
+    <style>
+.tabs.is-toggle li.is-active a {
+  background-color: #363636;
+  border-color: #363636;
+border-radius: 0px;
+}
+.tabs.is-toggle li:first-child a {
+border-radius: 0px;
+}
+.tabs.is-toggle li:last-child a {
+border-radius: 0px;
+}
+.button {
+border-radius: 0px;
+}
+.content .tag, .content .number {
+  display: inline;
+  padding: inherit;
+  font-size: inherit;
+  line-height: inherit;
+  text-align: inherit;
+  vertical-align: inherit;
+  border-radius: inherit;
+  font-weight: inherit;
+  white-space: inherit;
+  background: inherit;
+  margin: inherit;
+}
+</style>
+  </head>
+  <body>
+    <section class="hero is-dark is-bold is-fullheight" style="background: url('dog.jpg')center center; background-size:cover;">
+      <div class="hero-body">
+        <div class="container">
+          <h1 class="title" style="font-size:6rem">
+XRT
+          </h1>
+          <h2 class="subtitle is-2">
+Simple Data Processing
+          </h2>
+          <!-- <a class="button is-dark is-inverted is-outlined is-medium">
+Documentation
+          </a> -->
+          <a href="https://github.com/erikselin/xrt/releases" class="button is-dark is-inverted is-outlined is-medium">
+            <span class="icon"><i class="fab fa-github"></i></span>
+            <span>
+Download
+            </span>
+          </a>
+        </div>
+      </div>
+      <div class="hero-foot">
+        <div class="container has-text-centered">
+          <p>
+            <span class="icon"><i class="fas fa-3x fa-angle-double-down"></i></span>
+          </p>
+        </div>
+      </div>
+    </section>
+
+
+    <section class="hero is-medium">
+      <div class="hero-body">
+        <div class="container">
+          <h1 class="title">
+INTRODUCTION
+          </h1>
+          <p class="is-size-5">
+XRT is a programming-language-independent and resource-aware MapReduce runtime for multi-core systems.
+It can turn anything from resource-constrained single-board computers to large servers, with over a hundred cores, into high-performance parallelized data processing environments.
+          </p>
+          <br>
+          <div class="columns is-variable is-6">
+            <div class="column">
+              <p class="subtitle"><strong>
+FOR MEDIUM-DATA PROBLEMS
+              </strong></p>
+              <p>
+Most organizations do not have the data volumes to justify a clustered approach for large-scale data processing.
+XRT is an exploration of what a system might look like if built with medium-data problems in mind.
+              </p>
+            </div>
+            <div class="column">
+              <p class="subtitle"><strong>
+ANY PROGRAMMING-LANGUAGE
+              </strong></p>
+              <p>
+Why is it considered normal to maintain a separate data-stack from the production-stack?
+XRT encourages collaboration across all codebases and teams by enabling data processing in the same programming languages used in other parts of the organization.
+              </p>
+            </div>
+          </div>
+          <div class="columns is-variable is-6">
+            <div class="column">
+              <p class="subtitle"><strong>
+LOW-LEVEL
+              </strong></p>
+              <p>
+When you reach out for a general programming language to solve data problems you are likely looking for flexibility or performance.
+XRT offers both by using a flexible MapReduce programming model while simultaneously offering high performance through low-level optimizations.
+              </p>
+            </div>
+            <div class="column">
+              <p class="subtitle"><strong>
+SIMPLE
+              </strong></p>
+              <p>
+XRT differs philosophically from most data-processing systems by being composed of a small set of carefully chosen features instead of hiding complexities behind a sea of features.
+As a result, XRT encourages mastering the runtime through a deep understanding of how your data is being processed.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+<!--
+    <section class="hero is-info is-bold is-large" style="background: url('mountains.jpg')center center; background-size:cover;">
+      <div class="hero-body">
+        <div class="container">
+        </div>
+      </div>
+    </section>
+-->
+
+    <section class="hero is-medium is-light">
+      <div class="hero-body">
+        <div class="container">
+          <h1 class="title">
+THE RUNTIME
+          </h1>
+          <p class="is-size-5">
+          </p>
+          <br>
+          <div class="tile is-ancestor">
+            <div class="tile is-parent">
+              <article class="tile is-child notification" style="background-color: #FFF;">
+                <p class="subtitle"><strong>
+MULTI-CORE ONLY
+                </strong></p>
+                <p>
+XRT is built to scale vertically on modern high core-count systems instead of horizontally across a cluster.
+As a result, XRT benefits from high parallelism but avoids the performance implications and operational overhead of traditional cluster-based data processing runtimes.
+                </p>
+              </article>
+            </div>
+            <div class="tile is-parent">
+              <article class="tile is-child notification" style="background-color: #FFF;">
+                <p class="subtitle"><strong>
+NEWLINE-SEPARATED DATA
+                </strong></p>
+                <p>
+To enable the programming-language independent capacities, XRT only operates on newline-separated data formats.
+For example, it is very easy to start processing csv, tsv,newline-separated json, etc. with XRT.
+                </p>
+              </article>
+            </div>
+            <div class="tile is-parent">
+              <article class="tile is-child notification" style="background-color: #FFF;">
+                <p class="subtitle"><strong>
+PROCESS-BASED PARALLELISM
+                </strong></p>
+                <p>
+XRT enables parallel data processing by spawning multiple mapper processes and reducer processes and connecting them using stdin/stdout.
+This model, influenced by Hadoop Streaming, is really central to the programming-language independent capabilities of XRT.
+                </p>
+              </article>
+            </div>
+          </div>
+          <div class="tile is-ancestor">
+            <div class="tile is-parent">
+              <article class="tile is-child notification" style="background-color: #FFF;">
+                <p class="subtitle"><strong>
+RESOURCE-AWARE
+                </strong></p>
+                <p>
+XRT attempts to keep all intermediate data in memory to ensure optimal performance whenever possible.
+However, resource-awareness is a core feature and XRT is capable of utilizing efficient disk-based data structures for processing very large volumes of data.
+In fact, in a recent test, XRT efficiently sorted 100Gb using 1Gb of memory.
+                </p>
+              </article>
+            </div>
+            <div class="tile is-parent">
+              <article class="tile is-child notification" style="background-color: #FFF;">
+                <p class="subtitle"><strong>
+PERFORMANCE
+                </strong></p>
+                <p>
+In our benchmarks, XRT is on average 2x faster than Apache Spark when running on the same high core-count instance.
+When XRT is run on a single high core-count instance and Apache Spark on a cluster with the same total number of cores the performance difference is even greater.
+                </p>
+              </article>
+            </div>
+            <div class="tile is-parent">
+              <article class="tile is-child notification" style="background-color: #FFF;">
+                <p class="subtitle"><strong>
+SIMPLE OPERATIONS
+                </strong></p>
+                <p>
+XRT is zero-configuration and uses a single-binary deployment.
+The operational overhead of setting up an XRT environment is simply to download the binary and copy it to your server.
+In addition, since XRT runs on a single server environment and dependecy management is very simple.
+                </p>
+              </article>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="hero is-medium">
+      <div class="hero-body">
+        <div class="container">
+          <h1 class="title">
+A QUICK EXAMPLE
+          </h1>
+          <p class="is-size-5">
+Consider the classical word-count problem where we are given a dataset of sentences split into multiple files:
+          </p>
+          <br>
+          <pre style="background-color: #f5f5f5;"><code class="language-text content">input-part-1.txt
+input-part-2.txt
+...</code></pre>
+          <br>
+          <p class="is-size-5">
+Where the content of each file might look like:
+          </p>
+          <br>
+          <pre style="background-color: #f5f5f5;"><code class="language-text content">...
+I am alone in the midst of these happy, reasonable voices.
+All these creatures spend their time explaining, realizing happily that they agree with each other.
+In Heaven's name, why is it so important to think the same things all together.
+...
+</code></pre>
+          <br>
+          <p class="is-size-5">
+The challenge is to count the number of occurences of each word from within this dataset using programing-language:
+          </p>
+          <br>
+          <div class="tabs is-centered is-toggle is-dark">
+            <ul>
+              <li class="is-active"><a>Python</a></li>
+              <li><a>Ruby</a></li>
+              <li><a>Clojure</a></li>
+              <li><a>Node.js</a></li>
+              <li><a>Go</a></li>
+            </ul>
+          </div>
+          <p class="is-size-5">
+In XRT, if we wanted to use 4 mappers, 4 reducers and 2g of memory to solve this problem we would invoke XRT as follows:
+          </p>
+          <br>
+          <pre style="background-color: #f5f5f5;"><code class="language-bash content">xrt --mappers 4 \
+    --reducers 4 \
+    --memory 2g \
+    --input input-part-*.tsv \
+    --mapper "python map.py" \
+    --reducer "python reduce.py" \
+    --output output</code></pre>
+          <br>
+          <p class="is-size-5">
+Where the --mapper and --reducer are the commands used to run the user supplied mapper and reducer workers.
+For the mapper we want to read lines from stdin, split them into words and clean the word from punctuation.
+We then assign a key to each word ensuring that each similar word will get the same key.
+This key must be in the range 0-3 in this example as it directly instructs the XRT runtime which reducer will receive the word.
+          </p>
+          <br>
+          <pre style="background-color: #f5f5f5;"><code class="language-python content">from os import environ
+from string import punctuation
+from sys import stdin, stdout
+
+reducers = int(environ['REDUCERS'])
+for line in stdin:
+	for word in line.split():
+		word = word.lower().strip(punctuation)
+    	key = sum(ord(b) for b in word) % reducers
+    	stdout.write(f'{key}\t{word}\n')
+</code></pre>
+          <br>
+          <p class="is-size-5">
+The reducer reads a sorted stream of words from stdin and counts up the words emiting the word-count pair whenver a new word is encountered.
+          </p>
+          <br>
+          <pre style="background-color: #f5f5f5;"><code class="language-python content">from sys import stdin, stdout
+
+word = stdin.readline().rstrip()
+count = 1
+
+for line in stdin:
+	line = line.rstrip()
+    if word != line:
+        stdout.write(f'{word}\t{count}\n')
+        word = line
+        count = 0
+    count += 1
+stdout.write(f'{word}\t{count}\n')
+</code></pre>
+          <br>
+          <p class="is-size-5">
+The final output will end up as part files in the --output directory:
+          </p>
+          <br>
+          <pre style="background-color: #f5f5f5;"><code class="language-text content">output/part-0
+output/part-1
+output/part-2
+output/part-3</code></pre>
+        </div>
+      </div>
+    </section>
+
+    <section class="hero is-dark is-medium">
+      <div class="hero-body">
+        <div class="container has-text-centered">
+<!-- <a class="button is-dark is-inverted is-outlined is-medium">Documentation</a> -->
+<a href="https://github.com/erikselin/xrt" class="button is-dark is-inverted is-outlined is-medium"><span class="icon"><i class="fab fa-github"></i></span><span>Download</span></a>
+        </div>
+      </div>
+    </section>
+  </body>
+</html>
