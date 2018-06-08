@@ -11,6 +11,7 @@
     <script defer src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.14.0/components/prism-bash.min.js"></script>
     <script defer src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.14.0/components/prism-python.min.js"></script>
     <script defer src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.14.0/components/prism-ruby.min.js"></script>
+    <script defer src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.14.0/components/prism-go.min.js"></script>
     <style>
       .tabs.is-toggle li.is-active a {
         background-color: #363636;
@@ -385,7 +386,73 @@ end
 
 <pre id="node-code" style="display: none; background-color: #f5f5f5;"><code class="language-node content">node</code></pre>
 
-<pre id="go-code" style="display: none; background-color: #f5f5f5;"><code class="language-go content">go</code></pre>
+<pre id="go-code" style="display: none; background-color: #f5f5f5;"><code class="language-go content">package main
+
+import (
+	"bufio"
+	"fmt"
+	"log"
+	"os"
+	"strconv"
+	"strings"
+)
+
+func mapper() error {
+	s := bufio.NewScanner(os.Stdin)
+	w := bufio.NewWriter(os.Stdout)
+	reducers, err := strconv.Atoi(os.Getenv("REDUCERS"))
+	if err != nil {
+		return err
+	}
+	for s.Scan() {
+		uid, err := strconv.Atoi(strings.Split(s.Text(), "\t")[0])
+		if err != nil {
+			return err
+		}
+		key := uid % reducers
+		if _, err := fmt.Fprintf(w, "%d\t%d\n", key, uid); err != nil {
+			return err
+		}
+	}
+	if err := s.Err(); err != nil {
+		return err
+	}
+	return w.Flush()
+}
+
+func reducer() error {
+	s := bufio.NewScanner(os.Stdin)
+	w := bufio.NewWriter(os.Stdout)
+	if !s.Scan() {
+		return s.Err()
+	}
+	uid := s.Text()
+	count := 1
+	for s.Scan() {
+		if uid != s.Text() {
+			if _, err := fmt.Fprintf(w, "%s\t%d\n", uid, count); err != nil {
+				return err
+			}
+			uid = s.Text()
+			count = 0
+		}
+		count++
+	}
+	if err := s.Err(); err != nil {
+		return err
+	}
+	if _, err := fmt.Fprintf(w, "%s\t%d\n", uid, count); err != nil {
+		return err
+	}
+	return w.Flush()
+}
+
+func main() {
+	fn := map[string]func() error{"map": mapper, "reduce": reducer}[os.Args[1]]
+	if err := fn(); err != nil {
+		log.Fatal(err)
+	}
+}</code></pre>
 
 <!-- ##### end code ####$$$$################################################################### -->
 
