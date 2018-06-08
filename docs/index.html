@@ -282,40 +282,40 @@ In XRT, if we wanted to use 4 mappers, 4 reducers and 2g of memory to solve this
     --reducers 4 \
     --memory 2g \
     --input input/part-*.tsv \
-    --mapper "python wordcount.py map" \
-    --reducer "python wordcount.py reduce" \
+    --mapper "python useractivity.py map" \
+    --reducer "python useractivity.py reduce" \
     --output output</code></pre>
 
 <pre id="ruby-run" style="display: none; background-color: #f5f5f5;"><code class="language-bash content">xrt --mappers 4 \
     --reducers 4 \
     --memory 2g \
     --input input/part-*.tsv \
-    --mapper "ruby wordcount.rb map" \
-    --reducer "ruby wordcount.rb reduce" \
+    --mapper "ruby useractivity.rb map" \
+    --reducer "ruby useractivity.rb reduce" \
     --output output</code></pre>
 
 <pre id="clojure-run" style="display: none; background-color: #f5f5f5;"><code class="language-bash content">xrt --mappers 4 \
     --reducers 4 \
     --memory 2g \
     --input input/part-*.tsv \
-    --mapper "java -jar wordcount.jar map" \
-    --reducer "java -jar wordcount.jar reduce" \
+    --mapper "java -jar useractivity.jar map" \
+    --reducer "java -jar useractivity.jar reduce" \
     --output output</code></pre>
 
 <pre id="node-run" style="display: none; background-color: #f5f5f5;"><code class="language-bash content">xrt --mappers 4 \
     --reducers 4 \
     --memory 2g \
     --input input/part-*.tsv \
-    --mapper "node wordcount.js map" \
-    --reducer "node wordcount.js reduce" \
+    --mapper "node useractivity.js map" \
+    --reducer "node useractivity.js reduce" \
     --output output</code></pre>
 
 <pre id="go-run" style="display: none; background-color: #f5f5f5;"><code class="language-bash content">xrt --mappers 4 \
     --reducers 4 \
     --memory 2g \
     --input input/part-*.tsv \
-    --mapper "./wordcount map" \
-    --reducer "./wordcount reduce" \
+    --mapper "./useractivity map" \
+    --reducer "./useractivity reduce" \
     --output output</code></pre>
 
 <!-- ##### end run commands ################################################################### -->
@@ -354,7 +354,10 @@ def reducer():
         count += 1
     stdout.write(f'{uid}\t{count}\n')
 
-dict(map=mapper, reduce=reducer)[argv[1]]()</code></pre>
+if argv[1] == "map":
+    mapper()
+if argv[1] == "reduce":
+    reducer()</code></pre>
 
 <pre id="ruby-code" style="display: none; background-color: #f5f5f5;"><code class="language-ruby content">def mapper
   reducers = ENV['REDUCERS'].to_i
@@ -380,7 +383,12 @@ def reducer
   STDOUT.write "#{uid}\t#{count}\n"
 end
 
-{"map" => Proc.new { mapper }, "reduce" => Proc.new { reducer }}[ARGV[0]].call</code></pre>
+case ARGV[0]
+when "map"
+  mapper
+when "reduce"
+  reducer
+end</code></pre>
 
 <pre id="clojure-code" style="display: none; background-color: #f5f5f5;"><code class="language-clojure content">clojure</code></pre>
 
@@ -448,8 +456,14 @@ func reducer() error {
 }
 
 func main() {
-	fn := map[string]func() error{"map": mapper, "reduce": reducer}[os.Args[1]]
-	if err := fn(); err != nil {
+	var err error
+	switch os.Args[1] {
+	case "map":
+		err = mapper()
+	case "reduce":
+		err = reducer()
+	}
+	if err != nil {
 		log.Fatal(err)
 	}
 }</code></pre>
