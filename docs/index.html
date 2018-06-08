@@ -8,37 +8,56 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.14.0/themes/prism.min.css">
     <script defer src="https://use.fontawesome.com/releases/v5.0.7/js/all.js"></script>
     <script defer src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.14.0/prism.min.js"></script>
-    <script defer src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.14.0/components/prism-python.min.js"></script>
     <script defer src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.14.0/components/prism-bash.min.js"></script>
+    <script defer src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.14.0/components/prism-python.min.js"></script>
+    <script defer src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.14.0/components/prism-ruby.min.js"></script>
     <style>
-.tabs.is-toggle li.is-active a {
-  background-color: #363636;
-  border-color: #363636;
-border-radius: 0px;
-}
-.tabs.is-toggle li:first-child a {
-border-radius: 0px;
-}
-.tabs.is-toggle li:last-child a {
-border-radius: 0px;
-}
-.button {
-border-radius: 0px;
-}
-.content .tag, .content .number {
-  display: inline;
-  padding: inherit;
-  font-size: inherit;
-  line-height: inherit;
-  text-align: inherit;
-  vertical-align: inherit;
-  border-radius: inherit;
-  font-weight: inherit;
-  white-space: inherit;
-  background: inherit;
-  margin: inherit;
-}
-</style>
+      .tabs.is-toggle li.is-active a {
+        background-color: #363636;
+        border-color: #363636;
+      border-radius: 0px;
+      }
+      .tabs.is-toggle li:first-child a {
+      border-radius: 0px;
+      }
+      .tabs.is-toggle li:last-child a {
+      border-radius: 0px;
+      }
+      .button {
+      border-radius: 0px;
+      }
+      .content .tag, .content .number {
+        display: inline;
+        padding: inherit;
+        font-size: inherit;
+        line-height: inherit;
+        text-align: inherit;
+        vertical-align: inherit;
+        border-radius: inherit;
+        font-weight: inherit;
+        white-space: inherit;
+        background: inherit;
+        margin: inherit;
+      }
+    </style>
+    <script type="text/javascript">
+      function switchTo(lang) {
+        var langs = ['python', 'ruby', 'clojure', 'node', 'go'];
+        for (var i = 0; i < langs.length; ++i) {
+          button = document.getElementById(langs[i]+'-button');
+          run = document.getElementById(langs[i]+'-run');
+          code = document.getElementById(langs[i]+'-code');
+          button.classList.remove('is-active');
+          run.style.display = "none";
+          code.style.display = "none";
+          if (lang == langs[i]) {
+            button.classList.add('is-active');
+            run.style.display = "block";
+            code.style.display = "block";
+          }
+        }
+      }
+    </script>
   </head>
   <body>
     <section class="hero is-dark is-bold is-fullheight" style="background: url('fox.jpg')center center; background-size:cover;">
@@ -125,15 +144,6 @@ As a result, XRT encourages mastering the runtime through a deep understanding o
         </div>
       </div>
     </section>
-
-<!--
-    <section class="hero is-info is-bold is-large" style="background: url('mountains.jpg')center center; background-size:cover;">
-      <div class="hero-body">
-        <div class="container">
-        </div>
-      </div>
-    </section>
--->
 
     <section class="hero is-medium is-light">
       <div class="hero-body">
@@ -227,86 +237,158 @@ In addition, since XRT runs on a single server environment and dependecy managem
 A QUICK EXAMPLE
           </h1>
           <p class="is-size-5">
-Consider the classical word-count problem where we are given a dataset of sentences split into multiple files:
+Consider a dataset of user interactions split into multiple files:
           </p>
           <br>
-          <pre style="background-color: #f5f5f5;"><code class="language-text content">input-part-1.txt
-input-part-2.txt
+          <pre style="background-color: #f5f5f5;"><code class="language-text content">input/part-0
+input/part-1
 ...</code></pre>
           <br>
           <p class="is-size-5">
-Where the content of each file might look like:
+Where the content of each file contains rows of two columns. The first column contains a user-id
+and the second column the time of the user interaction. The data might look like this:
           </p>
           <br>
           <pre style="background-color: #f5f5f5;"><code class="language-text content">...
-I am alone in the midst of these happy, reasonable voices.
-All these creatures spend their time explaining, realizing happily that they agree with each other.
-In Heaven's name, why is it so important to think the same things all together.
+283913	2018-06-08T03:44:04
+957294	2018-06-08T03:44:10
+973849	2018-06-08T03:44:34
+104582	2018-06-08T03:45:01
 ...
 </code></pre>
           <br>
           <p class="is-size-5">
-The challenge is to count the number of occurences of each word from within this dataset using programing-language:
+The problem is to count the total number of interactions per user using programing-language:
           </p>
           <br>
           <div class="tabs is-centered is-toggle is-dark">
             <ul>
-              <li class="is-active"><a>Python</a></li>
-              <li><a>Ruby</a></li>
-              <li><a>Clojure</a></li>
-              <li><a>Node.js</a></li>
-              <li><a>Go</a></li>
+              <li id="python-button" class="is-active"><a href="javascript:switchTo('python')">Python</a></li>
+              <li id="ruby-button" ><a href="javascript:switchTo('ruby')">Ruby</a></li>
+              <li id="clojure-button" ><a href="javascript:switchTo('clojure')">Clojure</a></li>
+              <li id="node-button" ><a href="javascript:switchTo('node')">Node.js</a></li>
+              <li id="go-button" ><a href="javascript:switchTo('go')">Go</a></li>
             </ul>
           </div>
           <p class="is-size-5">
 In XRT, if we wanted to use 4 mappers, 4 reducers and 2g of memory to solve this problem we would invoke XRT as follows:
           </p>
           <br>
-          <pre style="background-color: #f5f5f5;"><code class="language-bash content">xrt --mappers 4 \
+
+<!-- ##### run commands ####################################################################### -->
+
+<pre id="python-run" style="background-color: #f5f5f5;"><code class="language-bash content">xrt --mappers 4 \
     --reducers 4 \
     --memory 2g \
-    --input input-part-*.tsv \
-    --mapper "python map.py" \
-    --reducer "python reduce.py" \
+    --input input/part-*.tsv \
+    --mapper "python wordcount.py map" \
+    --reducer "python wordcount.py reduce" \
     --output output</code></pre>
+
+<pre id="ruby-run" style="display: none; background-color: #f5f5f5;"><code class="language-bash content">xrt --mappers 4 \
+    --reducers 4 \
+    --memory 2g \
+    --input input/part-*.tsv \
+    --mapper "ruby wordcount.rb map" \
+    --reducer "ruby wordcount.rb reduce" \
+    --output output</code></pre>
+
+<pre id="clojure-run" style="display: none; background-color: #f5f5f5;"><code class="language-bash content">xrt --mappers 4 \
+    --reducers 4 \
+    --memory 2g \
+    --input input/part-*.tsv \
+    --mapper "java -jar wordcount.jar map" \
+    --reducer "java -jar wordcount.jar reduce" \
+    --output output</code></pre>
+
+<pre id="node-run" style="display: none; background-color: #f5f5f5;"><code class="language-bash content">xrt --mappers 4 \
+    --reducers 4 \
+    --memory 2g \
+    --input input/part-*.tsv \
+    --mapper "node wordcount.js map" \
+    --reducer "node wordcount.js reduce" \
+    --output output</code></pre>
+
+<pre id="go-run" style="display: none; background-color: #f5f5f5;"><code class="language-bash content">xrt --mappers 4 \
+    --reducers 4 \
+    --memory 2g \
+    --input input/part-*.tsv \
+    --mapper "./wordcount map" \
+    --reducer "./wordcount reduce" \
+    --output output</code></pre>
+
+<!-- ##### end run commands ################################################################### -->
+
           <br>
           <p class="is-size-5">
-Where the --mapper and --reducer are the commands used to run the user supplied mapper and reducer workers.
-For the mapper we want to read lines from stdin, split them into words and clean the word from punctuation.
-We then assign a key to each word ensuring that each similar word will get the same key.
-This key must be in the range 0-3 in this example as it directly instructs the XRT runtime which reducer will receive the word.
+Where the --mapper and --reducer are the commands used to run the user supplied mapper and reducer
+workers. For the mapper we want to read lines from stdin, split them into the columns and then
+assign a reducer key based on the user-id ensuring that each identical user-id will get processed
+by the same reducer. The reducer reads a sorted stream of user-ids from stdin keeping a running
+tally and emiting a user-id to count pair whenever a new user-id is encountered.
           </p>
           <br>
-          <pre style="background-color: #f5f5f5;"><code class="language-python content">from os import environ
-from string import punctuation
-from sys import stdin, stdout
 
-reducers = int(environ['REDUCERS'])
-for line in stdin:
-	for word in line.split():
-		word = word.lower().strip(punctuation)
-    	key = sum(ord(b) for b in word) % reducers
-    	stdout.write(f'{key}\t{word}\n')
-</code></pre>
-          <br>
-          <p class="is-size-5">
-The reducer reads a sorted stream of words from stdin and counts up the words emiting the word-count pair whenver a new word is encountered.
-          </p>
-          <br>
-          <pre style="background-color: #f5f5f5;"><code class="language-python content">from sys import stdin, stdout
+<!-- ##### code #####$$$$###################################################################### -->
 
-word = stdin.readline().rstrip()
-count = 1
+<pre id="python-code" style="background-color: #f5f5f5;"><code class="language-python content">from os import environ
+from sys import argv, stdin, stdout
 
-for line in stdin:
-	line = line.rstrip()
-    if word != line:
-        stdout.write(f'{word}\t{count}\n')
-        word = line
-        count = 0
+def mapper():
+    reducers = int(environ['REDUCERS'])
+    for line in stdin:
+        uid = int(line.split('\t')[0])
+        key = uid % reducers
+        stdout.write(f'{key}\t{uid}\n')
+
+def reducer():
+    uid = stdin.readline().rstrip()
+    count = 1
+    for line in stdin:
+        line = line.rstrip()
+        if uid != line:
+            stdout.write(f'{uid}\t{count}\n')
+            uid = line
+            count = 0
+        count += 1
+    stdout.write(f'{uid}\t{count}\n')
+
+dict(map=mapper, reduce=reducer)[argv[1]]()</code></pre>
+
+<pre id="ruby-code" style="display: none; background-color: #f5f5f5;"><code class="language-ruby content">def mapper
+  reducers = ENV['REDUCERS'].to_i
+  STDIN.each do |line|
+    uid = line.split('\t').first.to_i
+    key = uid % reducers
+    STDOUT.write "#{key}\t#{uid}\n"
+  end
+end
+
+def reducer
+  uid = STDIN.readline.rstrip
+  count = 1
+  STDIN.each do |line|
+    line.rstrip!
+    if uid != line
+      STDOUT.write "#{uid}\t#{count}\n"
+      uid = line
+      count = 0
+    end
     count += 1
-stdout.write(f'{word}\t{count}\n')
-</code></pre>
+  end
+  STDOUT.write "#{uid}\t#{count}\n"
+end
+
+{"map" => Proc.new { mapper }, "reduce" => Proc.new { reducer }}[ARGV[0]].call</code></pre>
+
+<pre id="clojure-code" style="display: none; background-color: #f5f5f5;"><code class="language-clojure content">clojure</code></pre>
+
+<pre id="node-code" style="display: none; background-color: #f5f5f5;"><code class="language-node content">node</code></pre>
+
+<pre id="go-code" style="display: none; background-color: #f5f5f5;"><code class="language-go content">go</code></pre>
+
+<!-- ##### end code ####$$$$################################################################### -->
+
           <br>
           <p class="is-size-5">
 The final output will end up as part files in the --output directory:
@@ -316,6 +398,18 @@ The final output will end up as part files in the --output directory:
 output/part-1
 output/part-2
 output/part-3</code></pre>
+          <br>
+          <p class="is-size-5">
+Where each part file would contain the user-id to count emitted by the reducers:
+          </p>
+          <br>
+          <pre style="background-color: #f5f5f5;"><code class="language-text content">...
+283913	142
+957294	4
+973849	40
+104582	32
+...</code></pre>
+
         </div>
       </div>
     </section>
