@@ -8,10 +8,13 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.14.0/themes/prism.min.css">
     <script defer src="https://use.fontawesome.com/releases/v5.0.7/js/all.js"></script>
     <script defer src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.14.0/prism.min.js"></script>
+    <script defer src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.14.0/components/prism-markup-templating.min.js"></script>
     <script defer src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.14.0/components/prism-bash.min.js"></script>
+    <script defer src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.14.0/components/prism-csharp.min.js"></script>
+    <script defer src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.14.0/components/prism-go.min.js"></script>
     <script defer src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.14.0/components/prism-python.min.js"></script>
     <script defer src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.14.0/components/prism-ruby.min.js"></script>
-    <script defer src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.14.0/components/prism-go.min.js"></script>
+    <script defer src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.14.0/components/prism-php.min.js"></script>
     <style>
       .tabs.is-toggle li.is-active a {
         background-color: #363636;
@@ -264,10 +267,10 @@ The problem is to count the total number of interactions per user using programi
             <ul>
               <li id="python-button" class="is-active"><a href="javascript:switchTo('python')">Python</a></li>
               <li id="ruby-button" ><a href="javascript:switchTo('ruby')">Ruby</a></li>
-              <!-- <li id="php" ><a href="javascript:switchTo('php')">PHP</a></li> -->
+              <li id="php-button" ><a href="javascript:switchTo('php')">PHP</a></li>
               <!-- <li id="node-button" ><a href="javascript:switchTo('node')">Node</a></li> -->
               <!-- <li id="clojure-button" ><a href="javascript:switchTo('clojure')">Clojure</a></li> -->
-              <!-- <li id="c#-button" ><a href="javascript:switchTo('c#')">C#</a></li> -->
+              <li id="c#-button" ><a href="javascript:switchTo('c#')">C#</a></li>
               <li id="go-button" ><a href="javascript:switchTo('go')">Go</a></li>
               <!-- <li id="c++-button" ><a href="javascript:switchTo('c++')">C++</a></li> -->
               <!-- <li id="swift-button"><a href="javascript:switchTo('swift')">Swift</a></li> -->
@@ -297,13 +300,25 @@ In XRT, if we wanted to use 4 mappers, 4 reducers and 2g of memory to solve this
     --reducer "ruby useractivity.rb reduce" \
     --output output</code></pre>
 
-<pre id="php-run" style="display: none; background-color: #f5f5f5;"><code class="language-bash content"></code></pre>
+<pre id="php-run" style="display: none; background-color: #f5f5f5;"><code class="language-bash content">xrt --mappers 4 \
+    --reducers 4 \
+    --memory 2g \
+    --input input/part-*.tsv \
+    --mapper "php useractivity.php map" \
+    --reducer "php useractivity.php reduce" \
+    --output output</code></pre>
 
 <pre id="node-run" style="display: none; background-color: #f5f5f5;"><code class="language-bash content"></code></pre>
 
 <pre id="clojure-run" style="display: none; background-color: #f5f5f5;"><code class="language-bash content"></code></pre>
 
-<pre id="c#-run" style="display: none; background-color: #f5f5f5;"><code class="language-bash content"></code></pre>
+<pre id="c#-run" style="display: none; background-color: #f5f5f5;"><code class="language-bash content">xrt --mappers 4 \
+    --reducers 4 \
+    --memory 2g \
+    --input input/part-*.tsv \
+    --mapper "./useractivity map" \
+    --reducer "./useractivity reduce" \
+    --output output</code></pre>
 
 <pre id="go-run" style="display: none; background-color: #f5f5f5;"><code class="language-bash content">xrt --mappers 4 \
     --reducers 4 \
@@ -391,13 +406,87 @@ when "reduce"
   reducer
 end</code></pre>
 
-<pre id="php-code" style="display: none; background-color: #f5f5f5;"><code class="language-ruby content"></code></pre>
+<pre id="php-code" style="display: none; background-color: #f5f5f5;"><code class="language-php content">function mapper() {
+    $reducers = (int)$_ENV["REDUCERS"];
+    while($line = fgets(STDIN)) {
+        $uid = (int)explode("\t", $line)[0];
+        $key = $uid % $reducers;
+        echo "line: $key\t$uid\n";
+    }
+}
+
+function reducer() {
+    $uid = rtrim(fgets(STDIN));
+    $count = 1;
+    while($line = fgets(STDIN)) {
+        $line = rtrim($line);
+        if($uid != $line) {
+            echo "$uid\t$count\n";
+            $uid = $line;
+            $count = 0;
+        }
+        $count++;
+    }
+    echo "$uid\t$count\n";
+}
+
+switch($argv[1]) {
+    case "map":
+        mapper();
+        break;
+    case "reduce":
+        reducer();
+        break;
+}</code></pre>
 
 <pre id="node-code" style="display: none; background-color: #f5f5f5;"><code class="language-ruby content"></code></pre>
 
 <pre id="clojure-code" style="display: none; background-color: #f5f5f5;"><code class="language-ruby content"></code></pre>
 
-<pre id="c#-code" style="display: none; background-color: #f5f5f5;"><code class="language-ruby content"></code></pre>
+<pre id="c#-code" style="display: none; background-color: #f5f5f5;"><code class="language-csharp content">using System;
+
+namespace myApp
+{
+    class Program
+    {
+        static void mapper()
+        {
+            var reducers = Int32.Parse(Environment.GetEnvironmentVariable("REDUCERS"));
+            for (var line = Console.ReadLine(); line != null; line = Console.ReadLine()) {
+                var uid = Int32.Parse(line.Split('\t')[0]);
+                var key = uid % reducers;
+                Console.WriteLine($"{key}\t{uid}");
+            }
+        }
+
+        static void reducer()
+        {
+            var uid = Console.ReadLine();
+            var count = 1;
+            for (string line = Console.ReadLine(); line != null; line = Console.ReadLine()) {
+                if (uid != line) {
+                    Console.WriteLine($"{uid}\t{count}");
+					uid = line;
+					count = 0;
+                }
+				count++;
+            }
+            Console.WriteLine($"{uid}\t{count}");
+        }
+
+        static void Main(string[] args)
+        {
+            switch(args[1]) {
+            case "map":
+                mapper();
+                break;
+            case "reduce":
+                reducer();
+                break;
+            }
+        }
+    }
+}</code></pre>
 
 <pre id="go-code" style="display: none; background-color: #f5f5f5;"><code class="language-go content">package main
 
