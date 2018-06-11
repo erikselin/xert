@@ -43,18 +43,22 @@
     </style>
     <script type="text/javascript">
       function switchTo(lang) {
-        var langs = ['python', 'ruby', 'clojure', 'node', 'go'];
+        var langs = ['python', 'ruby', 'php', 'node', 'clojure', 'c#', 'go', 'c++', 'swift', 'scala'];
         for (var i = 0; i < langs.length; ++i) {
-          button = document.getElementById(langs[i]+'-button');
-          run = document.getElementById(langs[i]+'-run');
-          code = document.getElementById(langs[i]+'-code');
-          button.classList.remove('is-active');
-          run.style.display = "none";
-          code.style.display = "none";
-          if (lang == langs[i]) {
-            button.classList.add('is-active');
-            run.style.display = "block";
-            code.style.display = "block";
+          try {
+            button = document.getElementById(langs[i]+'-button');
+            run = document.getElementById(langs[i]+'-run');
+            code = document.getElementById(langs[i]+'-code');
+            button.classList.remove('is-active');
+            run.style.display = "none";
+            code.style.display = "none";
+            if (lang == langs[i]) {
+              button.classList.add('is-active');
+              run.style.display = "block";
+              code.style.display = "block";
+            }
+          } catch (e) {
+            console.log("example for " + langs[i] + " is not implemented")
           }
         }
       }
@@ -70,9 +74,6 @@ XRT
           <h2 class="subtitle is-2">
 Simple Data Processing
           </h2>
-          <!-- <a class="button is-dark is-inverted is-outlined is-medium">
-Documentation
-          </a> -->
           <a href="https://github.com/erikselin/xrt/releases" class="button is-dark is-inverted is-outlined is-medium">
             <span class="icon"><i class="fab fa-github"></i></span>
             <span>
@@ -152,9 +153,6 @@ As a result, XRT encourages mastering the runtime through a deep understanding o
           <h1 class="title">
 THE RUNTIME
           </h1>
-          <p class="is-size-5">
-          </p>
-          <br>
           <div class="tile is-ancestor">
             <div class="tile is-parent">
               <article class="tile is-child notification" style="background-color: #FFF;">
@@ -266,9 +264,14 @@ The problem is to count the total number of interactions per user using programi
             <ul>
               <li id="python-button" class="is-active"><a href="javascript:switchTo('python')">Python</a></li>
               <li id="ruby-button" ><a href="javascript:switchTo('ruby')">Ruby</a></li>
-              <li id="clojure-button" ><a href="javascript:switchTo('clojure')">Clojure</a></li>
-              <li id="node-button" ><a href="javascript:switchTo('node')">Node.js</a></li>
+              <!-- <li id="php" ><a href="javascript:switchTo('php')">PHP</a></li> -->
+              <!-- <li id="node-button" ><a href="javascript:switchTo('node')">Node</a></li> -->
+              <!-- <li id="clojure-button" ><a href="javascript:switchTo('clojure')">Clojure</a></li> -->
+              <!-- <li id="c#-button" ><a href="javascript:switchTo('c#')">C#</a></li> -->
               <li id="go-button" ><a href="javascript:switchTo('go')">Go</a></li>
+              <!-- <li id="c++-button" ><a href="javascript:switchTo('c++')">C++</a></li> -->
+              <!-- <li id="swift-button"><a href="javascript:switchTo('swift')">Swift</a></li> -->
+              <!-- <li id="scala-button"><a href="javascript:switchTo('scala')">Scala</a></li> -->
             </ul>
           </div>
           <p class="is-size-5">
@@ -294,21 +297,13 @@ In XRT, if we wanted to use 4 mappers, 4 reducers and 2g of memory to solve this
     --reducer "ruby useractivity.rb reduce" \
     --output output</code></pre>
 
-<pre id="clojure-run" style="display: none; background-color: #f5f5f5;"><code class="language-bash content">xrt --mappers 4 \
-    --reducers 4 \
-    --memory 2g \
-    --input input/part-*.tsv \
-    --mapper "java -jar useractivity.jar map" \
-    --reducer "java -jar useractivity.jar reduce" \
-    --output output</code></pre>
+<pre id="php-run" style="display: none; background-color: #f5f5f5;"><code class="language-bash content"></code></pre>
 
-<pre id="node-run" style="display: none; background-color: #f5f5f5;"><code class="language-bash content">xrt --mappers 4 \
-    --reducers 4 \
-    --memory 2g \
-    --input input/part-*.tsv \
-    --mapper "node useractivity.js map" \
-    --reducer "node useractivity.js reduce" \
-    --output output</code></pre>
+<pre id="node-run" style="display: none; background-color: #f5f5f5;"><code class="language-bash content"></code></pre>
+
+<pre id="clojure-run" style="display: none; background-color: #f5f5f5;"><code class="language-bash content"></code></pre>
+
+<pre id="c#-run" style="display: none; background-color: #f5f5f5;"><code class="language-bash content"></code></pre>
 
 <pre id="go-run" style="display: none; background-color: #f5f5f5;"><code class="language-bash content">xrt --mappers 4 \
     --reducers 4 \
@@ -317,6 +312,12 @@ In XRT, if we wanted to use 4 mappers, 4 reducers and 2g of memory to solve this
     --mapper "./useractivity map" \
     --reducer "./useractivity reduce" \
     --output output</code></pre>
+
+<pre id="c++-run" style="display: none; background-color: #f5f5f5;"><code class="language-bash content"></code></pre>
+
+<pre id="swift-run" style="display: none; background-color: #f5f5f5;"><code class="language-bash content"></code></pre>
+
+<pre id="scala-run" style="display: none; background-color: #f5f5f5;"><code class="language-bash content"></code></pre>
 
 <!-- ##### end run commands ################################################################### -->
 
@@ -390,9 +391,13 @@ when "reduce"
   reducer
 end</code></pre>
 
-<pre id="clojure-code" style="display: none; background-color: #f5f5f5;"><code class="language-clojure content">clojure</code></pre>
+<pre id="php-code" style="display: none; background-color: #f5f5f5;"><code class="language-ruby content"></code></pre>
 
-<pre id="node-code" style="display: none; background-color: #f5f5f5;"><code class="language-node content">node</code></pre>
+<pre id="node-code" style="display: none; background-color: #f5f5f5;"><code class="language-ruby content"></code></pre>
+
+<pre id="clojure-code" style="display: none; background-color: #f5f5f5;"><code class="language-ruby content"></code></pre>
+
+<pre id="c#-code" style="display: none; background-color: #f5f5f5;"><code class="language-ruby content"></code></pre>
 
 <pre id="go-code" style="display: none; background-color: #f5f5f5;"><code class="language-go content">package main
 
@@ -468,6 +473,11 @@ func main() {
 	}
 }</code></pre>
 
+<pre id="c++-code" style="display: none; background-color: #f5f5f5;"><code class="language-ruby content"></code></pre>
+
+<pre id="swift-code" style="display: none; background-color: #f5f5f5;"><code class="language-ruby content"></code></pre>
+
+<pre id="scala-code" style="display: none; background-color: #f5f5f5;"><code class="language-ruby content"></code></pre>
 <!-- ##### end code ####$$$$################################################################### -->
 
           <br>
