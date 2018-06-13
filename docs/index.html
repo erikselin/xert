@@ -5,16 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>xrtproject.io</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.7.1/css/bulma.min.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.14.0/themes/prism.min.css">
     <script defer src="https://use.fontawesome.com/releases/v5.0.7/js/all.js"></script>
-    <script defer src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.14.0/prism.min.js"></script>
-    <script defer src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.14.0/components/prism-markup-templating.min.js"></script>
-    <script defer src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.14.0/components/prism-bash.min.js"></script>
-    <script defer src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.14.0/components/prism-csharp.min.js"></script>
-    <script defer src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.14.0/components/prism-go.min.js"></script>
-    <script defer src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.14.0/components/prism-python.min.js"></script>
-    <script defer src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.14.0/components/prism-ruby.min.js"></script>
-    <script defer src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.14.0/components/prism-php.min.js"></script>
     <style>
       .tabs.is-toggle li.is-active a {
         background-color: #363636;
@@ -46,29 +37,25 @@
     </style>
     <script type="text/javascript">
       function switchTo(lang) {
-        var langs = ['python', 'ruby', 'php', 'node', 'clojure', 'c#', 'go', 'c++', 'swift', 'scala'];
+        var langs = ['python', 'ruby', 'php', 'c#', 'go'];
         for (var i = 0; i < langs.length; ++i) {
-          try {
-            button = document.getElementById(langs[i]+'-button');
-            run = document.getElementById(langs[i]+'-run');
-            code = document.getElementById(langs[i]+'-code');
-            button.classList.remove('is-active');
-            run.style.display = "none";
-            code.style.display = "none";
-            if (lang == langs[i]) {
-              button.classList.add('is-active');
-              run.style.display = "block";
-              code.style.display = "block";
-            }
-          } catch (e) {
-            console.log("example for " + langs[i] + " is not implemented")
+          button = document.getElementById(langs[i]+'-button');
+          run = document.getElementById(langs[i]+'-run');
+          code = document.getElementById(langs[i]+'-code');
+          button.classList.remove('is-active');
+          run.style.display = "none";
+          code.style.display = "none";
+          if (lang == langs[i]) {
+            button.classList.add('is-active');
+            run.style.display = "block";
+            code.style.display = "block";
           }
         }
       }
     </script>
   </head>
   <body>
-    <section class="hero is-dark is-bold is-fullheight" style="background: url('fox.jpg')center center; background-size:cover;">
+    <section class="hero is-dark is-bold is-fullheight" style="background: url('images/fox.jpg')center center; background-size:cover;">
       <div class="hero-body">
         <div class="container">
           <h1 class="title" style="font-size:6rem">
@@ -102,7 +89,7 @@ Download
 INTRODUCTION
           </h1>
           <p class="is-size-5">
-XRT is a programming-language-independent and resource-aware MapReduce runtime for multi-core systems.
+XRT is a programming-language independent and resource-aware MapReduce runtime for multi-core systems.
 It can turn anything from resource-constrained single-board computers to large servers, with over a hundred cores, into high-performance parallelized data processing environments.
           </p>
           <br>
@@ -141,8 +128,8 @@ XRT offers both by using a flexible MapReduce programming model while simultaneo
 SIMPLE
               </strong></p>
               <p>
-XRT differs philosophically from most data-processing systems by being composed of a small set of carefully chosen features instead of hiding complexities behind a sea of features.
-As a result, XRT encourages mastering the runtime through a deep understanding of how your data is being processed.
+XRT differs philosophically from most data-processing systems by being composed of a small set of carefully chosen features.
+In addition, XRT has zero-configuration, a single-binary deployment and cross-platform compatibility resulting in low operational overhead and quick bootstrapping of local development environments.
               </p>
             </div>
           </div>
@@ -156,6 +143,12 @@ As a result, XRT encourages mastering the runtime through a deep understanding o
           <h1 class="title">
 THE RUNTIME
           </h1>
+          <p class="is-size-5">
+The classical MapReduce programming model is a constant source of inspiration for XRT.
+However, to enable various features, the XRT runtime contains some fundamental differences.
+These differences make it easy to reason about the runtime, facilitates development and help in delivering top performance.
+          </p>
+          <br>
           <div class="tile is-ancestor">
             <div class="tile is-parent">
               <article class="tile is-child notification" style="background-color: #FFF;">
@@ -164,7 +157,7 @@ MULTI-CORE ONLY
                 </strong></p>
                 <p>
 XRT is built to scale vertically on modern high core-count systems instead of horizontally across a cluster.
-As a result, XRT benefits from high parallelism but avoids the performance implications and operational overhead of traditional cluster-based data processing runtimes.
+As a result, XRT will benefit from high parallelism but avoids the performance implications and operational overhead of traditional cluster-based data processing runtimes.
                 </p>
               </article>
             </div>
@@ -174,8 +167,8 @@ As a result, XRT benefits from high parallelism but avoids the performance impli
 NEWLINE-SEPARATED DATA
                 </strong></p>
                 <p>
-To enable the programming-language independent capacities, XRT only operates on newline-separated data formats.
-For example, it is very easy to start processing csv, tsv,newline-separated json, etc. with XRT.
+To enable the programming-language independent capabilities, XRT only includes native support for reading and writting newline-separated data formats.
+That being said, XRT can read any data format as long as the reading or writing is implemented within the mapper or reducer code.
                 </p>
               </article>
             </div>
@@ -185,10 +178,15 @@ For example, it is very easy to start processing csv, tsv,newline-separated json
 PROCESS-BASED PARALLELISM
                 </strong></p>
                 <p>
-XRT enables parallel data processing by spawning multiple mapper processes and reducer processes and connecting them using stdin/stdout.
-This model, influenced by Hadoop Streaming, is really central to the programming-language independent capabilities of XRT.
+XRT enables parallel data processing by spawning multiple mapper processes and reducer processes and connecting them with the XRT runtime over stdin and stdout.
+This model, influenced by Hadoop Streaming, enables any programming-language that can read and write from the standard streams to work with XRT.
                 </p>
               </article>
+            </div>
+          </div>
+          <div class="tile is-ancestor">
+            <div class="tile is-parent">
+          <a href="images/plot.jpg"><img src="images/plot.jpg"></a>
             </div>
           </div>
           <div class="tile is-ancestor">
@@ -210,20 +208,20 @@ In fact, in a recent test, XRT efficiently sorted 100Gb using 1Gb of memory.
 PERFORMANCE
                 </strong></p>
                 <p>
-In our benchmarks, XRT is on average 2x faster than Apache Spark when running on the same high core-count instance.
-When XRT is run on a single high core-count instance and Apache Spark on a cluster with the same total number of cores the performance difference is even greater.
+In current benchmarks, optimized XRT jobs are on average 2x faster than equivalent Apache Spark jobs when running on the same high core-count instance.
+The performance difference is more significant when XRT is run on a single high core-count instance and Apache Spark on a cluster with an equal number of cores.
                 </p>
               </article>
             </div>
             <div class="tile is-parent">
               <article class="tile is-child notification" style="background-color: #FFF;">
                 <p class="subtitle"><strong>
-SIMPLE OPERATIONS
+FLEXIBLE
                 </strong></p>
                 <p>
-XRT is zero-configuration and uses a single-binary deployment.
-The operational overhead of setting up an XRT environment is simply to download the binary and copy it to your server.
-In addition, since XRT runs on a single server environment and dependecy management is very simple.
+XRT enables a flexible data processing environment by making input, output and reducer arguments optional.
+Running a map-only job is very common for injective transformations.
+Also, omitting input or output arguments is common when input or output logic is implemented within the mapper or reducer code directly.
                 </p>
               </article>
             </div>
@@ -242,16 +240,16 @@ A QUICK EXAMPLE
 Consider a dataset of user interactions split into multiple files:
           </p>
           <br>
-          <pre style="background-color: #f5f5f5;"><code class="language-text content">input/part-0
+          <pre style="background-color: #f5f5f5;"><code class="text content">input/part-0
 input/part-1
 ...</code></pre>
           <br>
           <p class="is-size-5">
-Where the content of each file contains rows of two columns. The first column contains a user-id
-and the second column the time of the user interaction. The data might look like this:
+The content of each file contains rows with two columns. The first column contains a user-id
+and the second column the time of the user interaction:
           </p>
           <br>
-          <pre style="background-color: #f5f5f5;"><code class="language-text content">...
+          <pre style="background-color: #f5f5f5;"><code class="text content">...
 283913	2018-06-08T03:44:04
 957294	2018-06-08T03:44:10
 973849	2018-06-08T03:44:34
@@ -268,219 +266,202 @@ The problem is to count the total number of interactions per user using programi
               <li id="python-button" class="is-active"><a href="javascript:switchTo('python')">Python</a></li>
               <li id="ruby-button" ><a href="javascript:switchTo('ruby')">Ruby</a></li>
               <li id="php-button" ><a href="javascript:switchTo('php')">PHP</a></li>
-              <!-- <li id="node-button" ><a href="javascript:switchTo('node')">Node</a></li> -->
-              <!-- <li id="clojure-button" ><a href="javascript:switchTo('clojure')">Clojure</a></li> -->
               <li id="c#-button" ><a href="javascript:switchTo('c#')">C#</a></li>
               <li id="go-button" ><a href="javascript:switchTo('go')">Go</a></li>
-              <!-- <li id="c++-button" ><a href="javascript:switchTo('c++')">C++</a></li> -->
-              <!-- <li id="swift-button"><a href="javascript:switchTo('swift')">Swift</a></li> -->
-              <!-- <li id="scala-button"><a href="javascript:switchTo('scala')">Scala</a></li> -->
             </ul>
           </div>
           <p class="is-size-5">
-In XRT, if we wanted to use 4 mappers, 4 reducers and 2g of memory to solve this problem we would invoke XRT as follows:
+The XRT invocation to use 4 mappers, 4 reducers and a maximum of 2g of memory is as follows:
           </p>
           <br>
 
 <!-- ##### run commands ####################################################################### -->
 
-<pre id="python-run" style="background-color: #f5f5f5;"><code class="language-bash content">xrt --mappers 4 \
+<pre id="python-run" style="background-color: #f5f5f5;"><code class="bash content">xrt --mappers 4 \
     --reducers 4 \
     --memory 2g \
     --input input/part-*.tsv \
-    --mapper "python useractivity.py map" \
-    --reducer "python useractivity.py reduce" \
+    --mapper <i>"python useractivity.py map"</i> \
+    --reducer <i>"python useractivity.py reduce"</i> \
     --output output</code></pre>
 
-<pre id="ruby-run" style="display: none; background-color: #f5f5f5;"><code class="language-bash content">xrt --mappers 4 \
+<pre id="ruby-run" style="display: none; background-color: #f5f5f5;"><code class="bash content">xrt --mappers 4 \
     --reducers 4 \
     --memory 2g \
     --input input/part-*.tsv \
-    --mapper "ruby useractivity.rb map" \
-    --reducer "ruby useractivity.rb reduce" \
+    --mapper <i>"ruby useractivity.rb map"</i> \
+    --reducer <i>"ruby useractivity.rb reduce"</i> \
     --output output</code></pre>
 
-<pre id="php-run" style="display: none; background-color: #f5f5f5;"><code class="language-bash content">xrt --mappers 4 \
+<pre id="php-run" style="display: none; background-color: #f5f5f5;"><code class="bash content">xrt --mappers 4 \
     --reducers 4 \
     --memory 2g \
     --input input/part-*.tsv \
-    --mapper "php useractivity.php map" \
-    --reducer "php useractivity.php reduce" \
+    --mapper <i>"php useractivity.php map"</i> \
+    --reducer <i>"php useractivity.php reduce"</i> \
     --output output</code></pre>
 
-<pre id="node-run" style="display: none; background-color: #f5f5f5;"><code class="language-bash content"></code></pre>
-
-<pre id="clojure-run" style="display: none; background-color: #f5f5f5;"><code class="language-bash content"></code></pre>
-
-<pre id="c#-run" style="display: none; background-color: #f5f5f5;"><code class="language-bash content">xrt --mappers 4 \
+<pre id="c#-run" style="display: none; background-color: #f5f5f5;"><code class="bash content">xrt --mappers 4 \
     --reducers 4 \
     --memory 2g \
     --input input/part-*.tsv \
-    --mapper "./useractivity map" \
-    --reducer "./useractivity reduce" \
+    --mapper <i>"./useractivity map"</i> \
+    --reducer <i>"./useractivity reduce"</i> \
     --output output</code></pre>
 
-<pre id="go-run" style="display: none; background-color: #f5f5f5;"><code class="language-bash content">xrt --mappers 4 \
+<pre id="go-run" style="display: none; background-color: #f5f5f5;"><code class="bash content">xrt --mappers 4 \
     --reducers 4 \
     --memory 2g \
     --input input/part-*.tsv \
-    --mapper "./useractivity map" \
-    --reducer "./useractivity reduce" \
+    --mapper <i>"./useractivity map"</i> \
+    --reducer <i>"./useractivity reduce"</i> \
     --output output</code></pre>
-
-<pre id="c++-run" style="display: none; background-color: #f5f5f5;"><code class="language-bash content"></code></pre>
-
-<pre id="swift-run" style="display: none; background-color: #f5f5f5;"><code class="language-bash content"></code></pre>
-
-<pre id="scala-run" style="display: none; background-color: #f5f5f5;"><code class="language-bash content"></code></pre>
 
 <!-- ##### end run commands ################################################################### -->
 
           <br>
           <p class="is-size-5">
-Where the --mapper and --reducer are the commands used to run the user supplied mapper and reducer
-workers. For the mapper we want to read lines from stdin, split them into the columns and then
-assign a reducer key based on the user-id ensuring that each identical user-id will get processed
-by the same reducer. The reducer reads a sorted stream of user-ids from stdin keeping a running
-tally and emiting a user-id to count pair whenever a new user-id is encountered.
+Where the --mapper and --reducer are the commands used to spawn the mapper and reducer processes.
+For the mapper, we read lines from stdin, split them into the columns and then assign a reducer-id based on the user-id ensuring that each identical user-id will get processed by the same reducer.
+The reducer reads a sorted stream of user-ids from stdin while keeping a running tally and emitting a user-id to count pair when it encounters a new user-id.
           </p>
           <br>
 
 <!-- ##### code #####$$$$###################################################################### -->
 
-<pre id="python-code" style="background-color: #f5f5f5;"><code class="language-python content">from os import environ
-from sys import argv, stdin, stdout
+<pre id="python-code" style="background-color: #f5f5f5;"><code class="content"><b>from</b> os <b>import</b> environ
+<b>from</b> sys <b>import</b> argv, stdin, stdout
 
-def mapper():
-    reducers = int(environ['REDUCERS'])
-    for line in stdin:
-        uid = int(line.split('\t')[0])
-        key = uid % reducers
-        stdout.write(f'{key}\t{uid}\n')
+<b>def</b> <i>mapper</i>():
+    reducers = <b>int</b>(environ[<i>'REDUCERS'</i>])
+    <b>for</b> line <b>in</b> stdin:
+        uid = <b>int</b>(line.split(<i>'\t'</i>)[0])
+        rid = uid % reducers
+        stdout.write(<i>f'{rid}\t{uid}\n'</i>)
 
-def reducer():
+<b>def</b> <i>reducer</i>():
     uid = stdin.readline().rstrip()
     count = 1
-    for line in stdin:
+    <b>for</b> line <b>in</b> stdin:
         line = line.rstrip()
-        if uid != line:
-            stdout.write(f'{uid}\t{count}\n')
+        <b>if</b> uid != line:
+            stdout.write(<i>f'{uid}\t{count}\n'</i>)
             uid = line
             count = 0
         count += 1
-    stdout.write(f'{uid}\t{count}\n')
+    stdout.write(<i>f'{uid}\t{count}\n'</i>)
 
-if argv[1] == "map":
+<b>if</b> argv[1] == <i>'map'</i>:
     mapper()
-if argv[1] == "reduce":
+<b>if</b> argv[1] == <i>'reduce'</i>:
     reducer()</code></pre>
 
-<pre id="ruby-code" style="display: none; background-color: #f5f5f5;"><code class="language-ruby content">def mapper
-  reducers = ENV['REDUCERS'].to_i
-  STDIN.each do |line|
-    uid = line.split('\t').first.to_i
-    key = uid % reducers
-    STDOUT.write "#{key}\t#{uid}\n"
-  end
-end
+<pre id="ruby-code" style="display: none; background-color: #f5f5f5;"><code class="ruby content"><b>def</b> <i>mapper</i>
+  reducers = ENV[<i>'REDUCERS'</i>].to_i
+  STDIN.each <b>do</b> |line|
+    uid = line.split(<i>'\t'</i>).first.to_i
+    rid = uid % reducers
+    STDOUT.write <i>"#{rid}\t#{uid}\n"</i>
+  <b>end</b>
+<b>end</b>
 
-def reducer
+<b>def</b> <i>reducer</i>
   uid = STDIN.readline.rstrip
   count = 1
-  STDIN.each do |line|
+  STDIN.each <b>do</b> |line|
     line.rstrip!
-    if uid != line
-      STDOUT.write "#{uid}\t#{count}\n"
+    <b>if</b> uid != line
+      STDOUT.write <i>"#{uid}\t#{count}\n"</i>
       uid = line
       count = 0
-    end
+    <b>end</b>
     count += 1
-  end
-  STDOUT.write "#{uid}\t#{count}\n"
-end
+  <b>end</b>
+  STDOUT.write <i>"#{uid}\t#{count}\n"</i>
+<b>end</b>
 
-case ARGV[0]
-when "map"
+<b>case</b> ARGV[0]
+<b>when</b> <i>"map"</i>
   mapper
-when "reduce"
+<b>when</b> <i>"reduce"</i>
   reducer
-end</code></pre>
+<b>end</b></code></pre>
 
-<pre id="php-code" style="display: none; background-color: #f5f5f5;"><code class="language-php content">function mapper() {
-    $reducers = (int)$_ENV["REDUCERS"];
-    while($line = fgets(STDIN)) {
-        $uid = (int)explode("\t", $line)[0];
-        $key = $uid % $reducers;
-        echo "line: $key\t$uid\n";
+<pre id="php-code" style="display: none; background-color: #f5f5f5;"><code class="php content"><b>&#60;?php</b>
+
+<b>function</b> <i>mapper</i>() {
+    $reducers = (int)$_ENV[<i>"REDUCERS"</i>];
+    <b>while</b>($line = fgets(STDIN)) {
+        $uid = (int)explode(<i>"\t"</i>, $line)[0];
+        $rid = $uid % $reducers;
+        echo <i>"line: $rid\t$uid\n"</i>;
     }
 }
 
-function reducer() {
+<b>function</b> <i>reducer</i>() {
     $uid = rtrim(fgets(STDIN));
     $count = 1;
-    while($line = fgets(STDIN)) {
+    <b>while</b>($line = fgets(STDIN)) {
         $line = rtrim($line);
-        if($uid != $line) {
-            echo "$uid\t$count\n";
+        <b>if</b> ($uid != $line) {
+            echo <i>"$uid\t$count\n"</i>;
             $uid = $line;
             $count = 0;
         }
         $count++;
     }
-    echo "$uid\t$count\n";
+    echo <i>"$uid\t$count\n"</i>;
 }
 
-switch($argv[1]) {
-    case "map":
+<b>switch</b>($argv[1]) {
+    case <i>"map"</i>:
         mapper();
         break;
-    case "reduce":
+    case <i>"reduce"</i>:
         reducer();
         break;
-}</code></pre>
+}
 
-<pre id="node-code" style="display: none; background-color: #f5f5f5;"><code class="language-ruby content"></code></pre>
+<b>?&#62;</b></code></pre>
 
-<pre id="clojure-code" style="display: none; background-color: #f5f5f5;"><code class="language-ruby content"></code></pre>
+<pre id="c#-code" style="display: none; background-color: #f5f5f5;"><code class="csharp content"><b>using</b> System;
 
-<pre id="c#-code" style="display: none; background-color: #f5f5f5;"><code class="language-csharp content">using System;
-
-namespace myApp
+<b>namespace</b> userActivity
 {
-    class Program
+    <b>class</b> Program
     {
-        static void mapper()
+        <b>static</b> void <i>mapper</i>()
         {
-            var reducers = Int32.Parse(Environment.GetEnvironmentVariable("REDUCERS"));
-            for (var line = Console.ReadLine(); line != null; line = Console.ReadLine()) {
-                var uid = Int32.Parse(line.Split('\t')[0]);
-                var key = uid % reducers;
-                Console.WriteLine($"{key}\t{uid}");
+            var reducers = Int32.Parse(Environment.GetEnvironmentVariable(<i>"REDUCERS"</i>));
+            <b>for</b> (var line = Console.ReadLine(); line != null; line = Console.ReadLine()) {
+                var uid = Int32.Parse(line.Split(<i>'\t'</i>)[0]);
+                var rid = uid % reducers;
+                Console.WriteLine(<i>$"{rid}\t{uid}"</i>);
             }
         }
 
-        static void reducer()
+        <b>static</b> void <i>reducer</i>()
         {
             var uid = Console.ReadLine();
             var count = 1;
             for (string line = Console.ReadLine(); line != null; line = Console.ReadLine()) {
                 if (uid != line) {
-                    Console.WriteLine($"{uid}\t{count}");
-					uid = line;
-					count = 0;
+                    Console.WriteLine(<i>$"{uid}\t{count}"</i>);
+                    uid = line;
+                    count = 0;
                 }
-				count++;
+                count++;
             }
-            Console.WriteLine($"{uid}\t{count}");
+            Console.WriteLine(<i>$"{uid}\t{count}"</i>);
         }
 
-        static void Main(string[] args)
+        <b>static</b> void <i>Main</i>(string[] args)
         {
             switch(args[1]) {
-            case "map":
+            case <i>"map"</i>:
                 mapper();
                 break;
-            case "reduce":
+            case <i>"reduce"</i>:
                 reducer();
                 break;
             }
@@ -488,85 +469,80 @@ namespace myApp
     }
 }</code></pre>
 
-<pre id="go-code" style="display: none; background-color: #f5f5f5;"><code class="language-go content">package main
+<pre id="go-code" style="display: none; background-color: #f5f5f5;"><code class="go content"><b>package</b> main
 
-import (
-	"bufio"
-	"fmt"
-	"log"
-	"os"
-	"strconv"
-	"strings"
+<b>import</b> (
+	<i>"bufio"</i>
+	<i>"fmt"</i>
+	<i>"log"</i>
+	<i>"os"</i>
+	<i>"strconv"</i>
+	<i>"strings"</i>
 )
 
-func mapper() error {
+<b>func</b> <i>mapper</i>() error {
 	s := bufio.NewScanner(os.Stdin)
 	w := bufio.NewWriter(os.Stdout)
-	reducers, err := strconv.Atoi(os.Getenv("REDUCERS"))
-	if err != nil {
-		return err
+	reducers, err := strconv.Atoi(os.Getenv(<i>"REDUCERS"</i>))
+	<b>if</b> err != nil {
+		<b>return</b> err
 	}
-	for s.Scan() {
-		uid, err := strconv.Atoi(strings.Split(s.Text(), "\t")[0])
-		if err != nil {
-			return err
+	<b>for</b> s.Scan() {
+		uid, err := strconv.Atoi(strings.Split(s.Text(), <i>"\t"</i>)[0])
+		<b>if</b> err != nil {
+			<b>return</b> err
 		}
-		key := uid % reducers
-		if _, err := fmt.Fprintf(w, "%d\t%d\n", key, uid); err != nil {
-			return err
+		rid := uid % reducers
+		<b>if</b> _, err := fmt.Fprintf(w, <i>"%d\t%d\n"</i>, rid, uid); err != nil {
+			<b>return</b> err
 		}
 	}
-	if err := s.Err(); err != nil {
-		return err
+	<b>if</b> err := s.Err(); err != nil {
+		<b>return</b> err
 	}
-	return w.Flush()
+	<b>return</b> w.Flush()
 }
 
-func reducer() error {
+<b>func</b> <i>reducer</i>() error {
 	s := bufio.NewScanner(os.Stdin)
 	w := bufio.NewWriter(os.Stdout)
-	if !s.Scan() {
-		return s.Err()
+	<b>if</b> !s.Scan() {
+		<b>return</b> s.Err()
 	}
 	uid := s.Text()
 	count := 1
-	for s.Scan() {
-		if uid != s.Text() {
-			if _, err := fmt.Fprintf(w, "%s\t%d\n", uid, count); err != nil {
-				return err
+	<b>for</b> s.Scan() {
+		<b>if</b> uid != s.Text() {
+			if _, err := fmt.Fprintf(w, <i>"%s\t%d\n"</i>, uid, count); err != nil {
+				<b>return</b> err
 			}
 			uid = s.Text()
 			count = 0
 		}
 		count++
 	}
-	if err := s.Err(); err != nil {
-		return err
+	<b>if</b> err := s.Err(); err != nil {
+		<b>return</b> err
 	}
-	if _, err := fmt.Fprintf(w, "%s\t%d\n", uid, count); err != nil {
-		return err
+	<b>if</b> _, err := fmt.Fprintf(w, <i>"%s\t%d\n"</i>, uid, count); err != nil {
+		<b>return</b> err
 	}
-	return w.Flush()
+	<b>return</b> w.Flush()
 }
 
-func main() {
+<b>func</b> <i>main</i>() {
 	var err error
-	switch os.Args[1] {
-	case "map":
+	<b>switch</b> os.Args[1] {
+	<b>case</b> <i>"map"</i>:
 		err = mapper()
-	case "reduce":
+	<b>case</b> <i>"reduce"</i>:
 		err = reducer()
 	}
-	if err != nil {
+	<b>if</b> err != nil {
 		log.Fatal(err)
 	}
 }</code></pre>
 
-<pre id="c++-code" style="display: none; background-color: #f5f5f5;"><code class="language-ruby content"></code></pre>
-
-<pre id="swift-code" style="display: none; background-color: #f5f5f5;"><code class="language-ruby content"></code></pre>
-
-<pre id="scala-code" style="display: none; background-color: #f5f5f5;"><code class="language-ruby content"></code></pre>
 <!-- ##### end code ####$$$$################################################################### -->
 
           <br>
@@ -574,7 +550,7 @@ func main() {
 The final output will end up as part files in the --output directory:
           </p>
           <br>
-          <pre style="background-color: #f5f5f5;"><code class="language-text content">output/part-0
+          <pre style="background-color: #f5f5f5;"><code class="text content">output/part-0
 output/part-1
 output/part-2
 output/part-3</code></pre>
@@ -583,7 +559,7 @@ output/part-3</code></pre>
 Where each part file would contain the user-id to count emitted by the reducers:
           </p>
           <br>
-          <pre style="background-color: #f5f5f5;"><code class="language-text content">...
+          <pre style="background-color: #f5f5f5;"><code class="text content">...
 283913	142
 957294	4
 973849	40

@@ -1,0 +1,67 @@
+digraph {
+  graph [ fontname=BlinkMacSystemFont, fontsize=22 ];
+  node [ fontname=BlinkMacSystemFont, fontsize=22 ];
+  edge [ fontname=BlinkMacSystemFont, fontsize=14 ];
+
+  rankdir=LR;
+  input [pos="-4,3!", label="Newline-Separated\nInput Records", shape=plaintext];
+
+  map1 [pos="-0.25,0.75!", label="{stdin|\nMapper\nProcess\n\n|stdout}", shape=record, style=filled, fillcolor=lightgray];
+  map2 [pos="-0.25,3!", label="{stdin|\nMapper\nProcess\n\n|stdout}", shape=record, style=filled, fillcolor=lightgray];
+  map3 [pos="-0.25,5.25!", label="{stdin|\nMapper\nProcess\n\n|stdout}", shape=record, style=filled, fillcolor=lightgray];
+
+  partition1 [pos="4.5,0.75!", label="Partition", shape=plaintext];
+  partition2 [pos="4.5,3!", label="Partition", shape=plaintext];
+  partition3 [pos="4.5,5.25!", label="Partition", shape=plaintext];
+
+  sort11 [pos="6,0!", label="Sort", shape=plaintext];
+  sort12 [pos="6,0.75!", label="Sort", shape=plaintext];
+  sort13 [pos="6,1.5!", label="Sort", shape=plaintext];
+  sort21 [pos="6,2.25!", label="Sort", shape=plaintext];
+  sort22 [pos="6,3!", label="Sort", shape=plaintext];
+  sort23 [pos="6,3.75!", label="Sort", shape=plaintext];
+  sort31 [pos="6,4.5!", label="Sort", shape=plaintext];
+  sort32 [pos="6,5.25!", label="Sort", shape=plaintext];
+  sort33 [pos="6,6!", label="Sort", shape=plaintext];
+
+  merge1 [pos="8,0.75!", label="Merge", shape=plaintext];
+  merge2 [pos="8,3!", label="Merge", shape=plaintext];
+  merge3 [pos="8,5.25!", label="Merge", shape=plaintext];
+
+  reduce1 [pos="12.25,0.75!", label="{stdin|\nReducer\nProcess\n\n|stdout}", shape=record, style=filled, fillcolor=lightgray];
+  reduce2 [pos="12.25,3!", label="{stdin|\nReducer\nProcess\n\n|stdout}", shape=record, style=filled, fillcolor=lightgray];
+  reduce3 [pos="12.25,5.25!", label="{stdin|\nReducer\nProcess\n\n|stdout}", shape=record, style=filled, fillcolor=lightgray];
+
+  output [pos="16,3!", label="Newline-Separated\nOutput Records", shape=plaintext];
+
+  input -> map1:w [label="(record)"];
+  input -> map2:w [label="(record)"];
+  input -> map3:w [label="(record)"];
+  map1 -> partition1 [label="(reducer-id<tab>record)"];
+  map2 -> partition2 [label="(reducer-id<tab>record)"];
+  map3 -> partition3 [label="(reducer-id<tab>record)"];
+  partition1 -> sort11;
+  partition1 -> sort12;
+  partition1 -> sort13;
+  partition2 -> sort21;
+  partition2 -> sort22;
+  partition2 -> sort23;
+  partition3 -> sort31;
+  partition3 -> sort32;
+  partition3 -> sort33;
+  sort11:e -> merge1:w;
+  sort12:e -> merge2:w;
+  sort13:e -> merge3:w;
+  sort21:e -> merge1:w;
+  sort22:e -> merge2:w;
+  sort23:e -> merge3:w;
+  sort31:e -> merge1:w;
+  sort32:e -> merge2:w;
+  sort33:e -> merge3:w;
+  merge1 -> reduce1 [label="(record)             "];
+  merge2 -> reduce2 [label="(record)             "];
+  merge3 -> reduce3 [label="(record)             "];
+  reduce1:e -> output [label="(record)"];
+  reduce2:e -> output [label="  (record)"];
+  reduce3:e -> output [label="(record)"];
+}
