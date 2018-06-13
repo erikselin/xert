@@ -1,5 +1,5 @@
 digraph {
-  graph [ fontname=BlinkMacSystemFont, fontsize=22 ];
+  graph [ margin="0.3,0.3", fontname=BlinkMacSystemFont, fontsize=22 ];
   node [ fontname=BlinkMacSystemFont, fontsize=22 ];
   edge [ fontname=BlinkMacSystemFont, fontsize=14 ];
 
