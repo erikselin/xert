@@ -1,11 +1,7 @@
 # XRT
 
-XRT is a programming-language independent MapReduce runtime for shared-memory systems.
+XRT is a programming-language-independent and resource-aware MapReduce runtime for multi-core
+systems. It can turn anything from resource-constrained single-board computers to large servers,
+with over a hundred cores, into high-performance data-processing environments.
 
-## Building
-
-Run `make` in the root of the project.
-
-## Usage
-
-Run `xrt --help` for usage. More details to come.
+Please see https://erikselin.github.io/xrt/ for more details.
