@@ -89,8 +89,8 @@ Download
 INTRODUCTION
           </h1>
           <p class="is-size-5">
-XRT is a programming-language independent and resource-aware MapReduce runtime for multi-core systems.
-It can turn anything from resource-constrained single-board computers to large servers, with over a hundred cores, into high-performance parallelized data processing environments.
+XRT is a programming-language-independent and resource-aware MapReduce runtime for multi-core systems.
+It can turn anything from resource-constrained single-board computers to large servers, with over a hundred cores, into high-performance data-processing environments.
           </p>
           <br>
           <div class="columns is-variable is-6">
@@ -99,8 +99,8 @@ It can turn anything from resource-constrained single-board computers to large s
 FOR MEDIUM-DATA PROBLEMS
               </strong></p>
               <p>
-Most organizations do not have the data volumes to justify a clustered approach for large-scale data processing.
-XRT is an exploration of what a system might look like if built with medium-data problems in mind.
+Most organizations do not have the data volumes to justify cluster-based data-processing.
+XRT is an exploration of what a data-processing system might look like if built with medium-data problems in mind.
               </p>
             </div>
             <div class="column">
@@ -108,7 +108,7 @@ XRT is an exploration of what a system might look like if built with medium-data
 ANY PROGRAMMING-LANGUAGE
               </strong></p>
               <p>
-Why is it considered normal to maintain a separate data-stack from the production-stack?
+Why is it considered reasonable to maintain a separate data-stack from the production-stack?
 XRT encourages collaboration across all codebases and teams by enabling data processing in the same programming languages used in other parts of the organization.
               </p>
             </div>
@@ -120,7 +120,7 @@ LOW-LEVEL
               </strong></p>
               <p>
 When you reach out for a general programming language to solve data problems you are likely looking for flexibility or performance.
-XRT offers both by using a flexible MapReduce programming model while simultaneously offering high performance through low-level optimizations.
+XRT offers both by using a flexible MapReduce programming model while simultaneously providing high performance through low-level optimizations.
               </p>
             </div>
             <div class="column">
@@ -129,7 +129,7 @@ SIMPLE
               </strong></p>
               <p>
 XRT differs philosophically from most data-processing systems by being composed of a small set of carefully chosen features.
-In addition, XRT has zero-configuration, a single-binary deployment and cross-platform compatibility resulting in low operational overhead and quick bootstrapping of local development environments.
+Also, XRT has zero-configuration, a single-binary deployment and cross-platform compatibility resulting in low operational overhead and quick bootstrapping of development environments.
               </p>
             </div>
           </div>
@@ -167,8 +167,8 @@ As a result, XRT will benefit from high parallelism but avoids the performance i
 NEWLINE-SEPARATED DATA
                 </strong></p>
                 <p>
-To enable the programming-language independent capabilities, XRT only includes native support for reading and writting newline-separated data formats.
-That being said, XRT can read any data format as long as the reading or writing is implemented within the mapper or reducer code.
+To enable the programming-language independent capabilities, XRT only includes native support for reading and writing newline-separated data formats.
+However, XRT can be extended to process any data format by implementing the read or write logic within the mapper or reducer.
                 </p>
               </article>
             </div>
@@ -178,8 +178,8 @@ That being said, XRT can read any data format as long as the reading or writing 
 PROCESS-BASED PARALLELISM
                 </strong></p>
                 <p>
-XRT enables parallel data processing by spawning multiple mapper processes and reducer processes and connecting them with the XRT runtime over stdin and stdout.
-This model, influenced by Hadoop Streaming, enables any programming-language that can read and write from the standard streams to work with XRT.
+XRT enables parallel data processing by spawning multiple mappers and reducers as subprocesses and connecting them with the XRT runtime over stdin and stdout.
+This model, influenced by Hadoop Streaming, enables any programming language that can read and write from the standard streams to work with XRT.
                 </p>
               </article>
             </div>
@@ -197,8 +197,8 @@ RESOURCE-AWARE
                 </strong></p>
                 <p>
 XRT attempts to keep all intermediate data in memory to ensure optimal performance whenever possible.
-However, resource-awareness is a core feature and XRT is capable of utilizing efficient disk-based data structures for processing very large volumes of data.
-In fact, in a recent test, XRT efficiently sorted 100Gb using 1Gb of memory.
+However, resource-awareness is a core concern, and XRT is capable of utilizing efficient disk-based data structures for processing vast volumes of data.
+In a recent test, XRT efficiently sorted 100Gb using 1Gb of memory.
                 </p>
               </article>
             </div>
@@ -208,8 +208,8 @@ In fact, in a recent test, XRT efficiently sorted 100Gb using 1Gb of memory.
 PERFORMANCE
                 </strong></p>
                 <p>
-In current benchmarks, optimized XRT jobs are on average 2x faster than equivalent Apache Spark jobs when running on the same high core-count instance.
-The performance difference is more significant when XRT is run on a single high core-count instance and Apache Spark on a cluster with an equal number of cores.
+In current benchmarks, optimized XRT jobs are on average 2x faster than equivalent Apache Spark jobs when running on the same high core-count system.
+When XRT is run on a single high core-count system and Apache Spark on a networked cluster with an equal number of cores, the performance difference is even greater.
                 </p>
               </article>
             </div>
@@ -219,9 +219,9 @@ The performance difference is more significant when XRT is run on a single high 
 FLEXIBLE
                 </strong></p>
                 <p>
-XRT enables a flexible data processing environment by making input, output and reducer arguments optional.
-Running a map-only job is very common for injective transformations.
-Also, omitting input or output arguments is common when input or output logic is implemented within the mapper or reducer code directly.
+XRT enables a flexible data processing environment by making input, output and reducer optional.
+Running a map-only job is very common for injective transformations like simple parallelized ETL problems.
+Omitting input or output is common when input or output logic is implemented within the mapper or reducer code directly.
                 </p>
               </article>
             </div>
@@ -245,20 +245,18 @@ input/part-1
 ...</code></pre>
           <br>
           <p class="is-size-5">
-The content of each file contains rows with two columns. The first column contains a user-id
-and the second column the time of the user interaction:
+Each row of each file contains information about a particular interaction where the first column contains a user-id:
           </p>
           <br>
-          <pre style="background-color: #f5f5f5;"><code class="text content">...
-283913	2018-06-08T03:44:04
-957294	2018-06-08T03:44:10
-973849	2018-06-08T03:44:34
-104582	2018-06-08T03:45:01
+          <pre style="background-color: #f5f5f5;"><code class="text content">283913	...
+957294	...
+973849	...
+104582	...
 ...
 </code></pre>
           <br>
           <p class="is-size-5">
-The problem is to count the total number of interactions per user using programing-language:
+The problem to solve is to count the total number of interactions per user using programing-language:
           </p>
           <br>
           <div class="tabs is-centered is-toggle is-dark">
@@ -321,7 +319,7 @@ The XRT invocation to use 4 mappers, 4 reducers and a maximum of 2g of memory is
 
           <br>
           <p class="is-size-5">
-Where the --mapper and --reducer are the commands used to spawn the mapper and reducer processes.
+Where the --mapper and --reducer are the commands used to spawn the mapper and reducer subprocesses.
 For the mapper, we read lines from stdin, split them into the columns and then assign a reducer-id based on the user-id ensuring that each identical user-id will get processed by the same reducer.
 The reducer reads a sorted stream of user-ids from stdin while keeping a running tally and emitting a user-id to count pair when it encounters a new user-id.
           </p>
@@ -559,8 +557,7 @@ output/part-3</code></pre>
 Where each part file would contain the user-id to count emitted by the reducers:
           </p>
           <br>
-          <pre style="background-color: #f5f5f5;"><code class="text content">...
-283913	142
+          <pre style="background-color: #f5f5f5;"><code class="text content">283913	142
 957294	4
 973849	40
 104582	32
