@@ -14,8 +14,8 @@ default:
 	go build ${LDFLAGS} -o ${BINARY}
 
 test: default
-	go test
-	tests/run
+	go test -v
+	tests/integration
 
 dist: test
 	mkdir ${PACKAGE}

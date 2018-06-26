@@ -4,6 +4,6 @@ from sys import stdin, stdout
 n = int(environ['REDUCERS'])
 
 for line in stdin:
-    word = line.strip()
-    key = hash(word.lower()) % n
-    stdout.write(f'{key}\t{word.lower()}\n')
+    word = line.strip().lower()
+    key = ord(word[0]) % n
+    stdout.write(f'{key}\t{word}\n')
