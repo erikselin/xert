@@ -6,8 +6,12 @@ set +x
 ROOT=$(dirname "${BASH_SOURCE[0]}" )
 
 cores=4
-memory=1g
 records=1000
+
+memory=(
+	"16m"
+	"16k"
+)
 
 datasets=(
 	"sorted-asc"
@@ -18,78 +22,81 @@ datasets=(
 )
 
 for dataset in "${datasets[@]}"; do
-    input=$ROOT/data-$dataset.tsv
+	input=$ROOT/data-$dataset.tsv
 	if [ ! -f $input ]; then
 		python3 $ROOT/datagen.py $dataset $records $input
 	fi
 
-    tst=string-search
-    echo "=== RUN   $dataset-$tst"
-    output=$ROOT/output-$tst-$dataset
-    log=$ROOT/log-$tst-$dataset.log
-    profile=$ROOT/profile-$tst-$dataset.profile
-    rm -f -r $output
-    rm -f $log
-    rm -f $profile
-    $ROOT/../xrt --mappers $cores \
-                 --reducers $cores \
-                 --memory $memory \
-                 --input $input \
-                 --mapper "python3 $ROOT/$tst/map.py" \
-                 --output $output &> $log \
-                 --profile $profile
-    if python3 $ROOT/$tst/check.py $input $output; then
-        echo "--- PASS: $dataset-$tst"
-    else
-        echo "--- FAIL: $dataset-$tst"
-        exit 1
-    fi
+	for mem in "${memory[@]}"; do
 
-    tst=parallel-sort
-    echo "=== RUN   $dataset-$tst"
-    output=$ROOT/output-$tst-$dataset
-    log=$ROOT/log-$tst-$dataset.log
-    profile=$ROOT/profile-$tst-$dataset.profile
-    rm -f -r $output
-    rm -f $log
-    rm -f $profile
-    $ROOT/../xrt --mappers $cores \
-                 --reducers $cores \
-                 --memory $memory \
-                 --input $input \
-                 --mapper "python3 $ROOT/$tst/map.py" \
-                 --reducer "python3 $ROOT/$tst/reduce.py" \
-                 --output $output &> $log \
-                 --profile $profile
-    if python3 $ROOT/$tst/check.py $input $output; then
-        echo "--- PASS: $dataset-$tst"
-    else
-        echo "--- FAIL: $dataset-$tst"
-        exit 1
-    fi
+		tst=string-search
+		echo "=== RUN   $tst-$dataset-$mem"
+		output=$ROOT/output-$tst-$dataset-$mem
+		log=$ROOT/log-$tst-$dataset-$mem.log
+		profile=$ROOT/profile-$tst-$dataset-$mem.profile
+		rm -f -r $output
+		rm -f $log
+		rm -f $profile
+		$ROOT/../xrt --mappers $cores \
+					 --reducers $cores \
+					 --memory $mem \
+					 --input $input \
+					 --mapper "python3 $ROOT/$tst/map.py" \
+					 --output $output &> $log \
+					 --profile $profile
+		if python3 $ROOT/$tst/check.py $input $output; then
+			echo "--- PASS: $tst-$dataset-$mem"
+		else
+			echo "--- FAIL: $tst-$dataset-$mem"
+			exit 1
+		fi
 
-    tst=word-count
-    echo "=== RUN   $dataset-$tst"
-    output=$ROOT/output-$tst-$dataset
-    log=$ROOT/log-$tst-$dataset.log
-    profile=$ROOT/profile-$tst-$dataset.profile
-    rm -f -r $output
-    rm -f $log
-    rm -f $profile
-    $ROOT/../xrt --mappers $cores \
-                 --reducers $cores \
-                 --memory $memory \
-                 --input $input \
-                 --mapper "python3 $ROOT/$tst/map.py" \
-                 --reducer "python3 $ROOT/$tst/reduce.py" \
-                 --output $output &> $log \
-                 --profile $profile
-    if python3 $ROOT/$tst/check.py $input $output; then
-        echo "--- PASS: $dataset-$tst"
-    else
-        echo "--- FAIL: $dataset-$tst"
-        exit 1
-    fi
+		tst=parallel-sort
+		echo "=== RUN   $tst-$dataset-$mem"
+		output=$ROOT/output-$tst-$dataset-$mem
+		log=$ROOT/log-$tst-$dataset-$mem.log
+		profile=$ROOT/profile-$tst-$dataset-$mem.profile
+		rm -f -r $output
+		rm -f $log
+		rm -f $profile
+		$ROOT/../xrt --mappers $cores \
+					 --reducers $cores \
+					 --memory $mem \
+					 --input $input \
+					 --mapper "python3 $ROOT/$tst/map.py" \
+					 --reducer "python3 $ROOT/$tst/reduce.py" \
+					 --output $output &> $log \
+					 --profile $profile
+		if python3 $ROOT/$tst/check.py $input $output; then
+			echo "--- PASS: $tst-$dataset-$mem"
+		else
+			echo "--- FAIL: $tst-$dataset-$mem"
+			exit 1
+		fi
+
+		tst=word-count
+		echo "=== RUN   $tst-$dataset-$mem"
+		output=$ROOT/output-$tst-$dataset-$mem
+		log=$ROOT/log-$tst-$dataset-$mem.log
+		profile=$ROOT/profile-$tst-$dataset-$mem.profile
+		rm -f -r $output
+		rm -f $log
+		rm -f $profile
+		$ROOT/../xrt --mappers $cores \
+					 --reducers $cores \
+					 --memory $mem \
+					 --input $input \
+					 --mapper "python3 $ROOT/$tst/map.py" \
+					 --reducer "python3 $ROOT/$tst/reduce.py" \
+					 --output $output &> $log \
+					 --profile $profile
+		if python3 $ROOT/$tst/check.py $input $output; then
+			echo "--- PASS: $tst-$dataset-$mem"
+		else
+			echo "--- FAIL: $tst-$dataset-$mem"
+			exit 1
+		fi
+	done
 done
 
 echo "PASS"
