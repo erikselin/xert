@@ -17,11 +17,11 @@ test: default
 	go test -v
 	tests/integration
 
-dist: test
+dist:
 	mkdir ${PACKAGE}
 	cp README.md ${PACKAGE}/README.md
 	cp LICENSE ${PACKAGE}/LICENSE
-	go build ${LDFLAGS} -o ../${PACKAGE}/${BINARY}
+	go build ${LDFLAGS} -o ${PACKAGE}/${BINARY}
 	tar czf ${PACKAGE}.tar.gz ${PACKAGE}
 	rm -rf ${PACKAGE}
 
