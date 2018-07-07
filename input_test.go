@@ -12,16 +12,16 @@ var extractTests = []struct {
 	outRoot  string
 	outRegex string
 }{
-	{"foo", wd, "foo"},
-	{"foo/", "foo/", "foo/"},
-	{"foo/?", "foo/", "foo/."},
-	{"foo/ba.*", "foo/", "foo/ba\\.[^/]*"},
-	{"foo/[ab]/bar", "foo/", "foo/[ab]/bar"},
-	{"/foo/[^ab]/bar", "/foo/", "/foo/[^ab]/bar"},
-	{"/foo/[a-b]/bar", "/foo/", "/foo/[a-b]/bar"},
-	{"/foo/[^a-b]/bar", "/foo/", "/foo/[^a-b]/bar"},
-	{"/foo/{a,b}/bar", "/foo/", "/foo/(?:a|b)/bar"},
-	{"/foo/b+r.biz", "/foo/", "/foo/b\\+r\\.biz"},
+	{"foo", wd, "^foo$"},
+	{"foo/", "foo/", "^foo/$"},
+	{"foo/?", "foo/", "^foo/.$"},
+	{"foo/ba.*", "foo/", "^foo/ba\\.[^/]*$"},
+	{"foo/[ab]/bar", "foo/", "^foo/[ab]/bar$"},
+	{"/foo/[^ab]/bar", "/foo/", "^/foo/[^ab]/bar$"},
+	{"/foo/[a-b]/bar", "/foo/", "^/foo/[a-b]/bar$"},
+	{"/foo/[^a-b]/bar", "/foo/", "^/foo/[^a-b]/bar$"},
+	{"/foo/{a,b}/bar", "/foo/", "^/foo/(?:a|b)/bar$"},
+	{"/foo/b+r.biz", "/foo/", "^/foo/b\\+r\\.biz$"},
 }
 
 func TestExtractRoot(t *testing.T) {

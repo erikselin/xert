@@ -108,7 +108,7 @@ func extractRoot(input string) (string, error) {
 }
 
 func extractRegex(input string) (*regexp.Regexp, error) {
-	regex := ""
+	regex := "^"
 	for _, c := range input {
 		switch c {
 		case '.', '$', '(', ')', '|', '+':
@@ -130,7 +130,7 @@ func extractRegex(input string) (*regexp.Regexp, error) {
 		}
 		regex = fmt.Sprintf("%s%c", regex, c)
 	}
-	return regexp.Compile(regex)
+	return regexp.Compile(fmt.Sprintf("%s$", regex))
 }
 
 func startWalk(root string, regex *regexp.Regexp, chunks chan *chunk) {
