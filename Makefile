@@ -1,6 +1,6 @@
 BINARY := xrt
 
-BUILD_VERSION := 0.3.1
+BUILD_VERSION := 0.3.2
 
 LDFLAG_VERSION := main.version=${BUILD_VERSION}
 LDFLAGS        := -ldflags "-X ${LDFLAG_VERSION}"
@@ -15,7 +15,7 @@ default:
 
 test: default
 	go test -v
-	tests/integration
+	tests/run
 
 dist:
 	mkdir ${PACKAGE}
@@ -28,7 +28,6 @@ dist:
 clean:
 	rm -rf ${BINARY}
 	rm -f *.tar.gz
-	rm -f tests/data-*
+	rm -rf tests/data-*
 	rm -f tests/log-*
-	rm -f tests/profile-*
 	rm -rf tests/output-*
