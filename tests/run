@@ -6,7 +6,7 @@ set +x
 ROOT=$(dirname "${BASH_SOURCE[0]}" )
 
 cores=4
-records=250
+records=1000
 
 memory=(
 	"16m" # 1m per buffer
@@ -23,6 +23,8 @@ keys=(
 	"long"
 )
 
+size=$(($records/$cores))
+
 for mode in "${modes[@]}"; do
 	for key in "${keys[@]}"; do
 		dataset=$ROOT/data-$mode-$key
@@ -30,7 +32,7 @@ for mode in "${modes[@]}"; do
 		rm -f -r $dataset
 		rm -f $log
 		$ROOT/../xrt --mappers $cores \
-					 --mapper "python3 $ROOT/generate/map.py $mode $keys $records" \
+					 --mapper "python3 $ROOT/generate/map.py $mode $keys $size" \
 					 --output $dataset &> $log
 
 		for mem in "${memory[@]}"; do
