@@ -22,12 +22,8 @@ type chunk struct {
 	err      error
 }
 
-func (c *chunk) writeTo(w io.Writer) error { // TODO closer?
+func (c *chunk) copyChunk(f *os.File, w io.Writer) error {
 	buf := make([]byte, 1)
-	f, err := os.Open(c.filename)
-	if err != nil {
-		return err
-	}
 	if _, err := f.Seek(c.start, 0); err != nil {
 		return err
 	}
@@ -36,13 +32,13 @@ func (c *chunk) writeTo(w io.Writer) error { // TODO closer?
 			c.start++
 			_, err := f.Read(buf)
 			if err == io.EOF {
-				return f.Close()
+				return nil
 			}
 			if err != nil {
 				return err
 			}
 			if c.start == c.end {
-				return f.Close()
+				return nil
 			}
 			if buf[0] == recordSeparator {
 				break
@@ -55,7 +51,7 @@ func (c *chunk) writeTo(w io.Writer) error { // TODO closer?
 	for {
 		_, err := f.Read(buf)
 		if err == io.EOF {
-			return f.Close()
+			return nil
 		}
 		if err != nil {
 			return err
@@ -64,7 +60,7 @@ func (c *chunk) writeTo(w io.Writer) error { // TODO closer?
 			return err
 		}
 		if buf[0] == recordSeparator {
-			return f.Close()
+			return nil
 		}
 	}
 }
