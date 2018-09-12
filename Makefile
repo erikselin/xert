@@ -15,7 +15,7 @@ default:
 
 test: default
 	go test -v
-	tests/run
+	tests/run 4 1000 16m 16k
 
 dist:
 	mkdir ${PACKAGE}

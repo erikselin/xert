@@ -32,13 +32,31 @@ func closedOutputStream(c context, r io.ReadCloser) error {
 }
 
 func inputStream(c context, w io.WriteCloser, inputChunks chan *chunk) error {
+	var f *os.File
+	var err error
 	for chunk := range inputChunks {
 		if chunk.err != nil {
 			return c.err(chunk.err.Error())
 		}
+		if f == nil || f.Name() != chunk.filename {
+			if f != nil {
+				if err = f.Close(); err != nil {
+					return err
+				}
+			}
+			f, err = os.Open(chunk.filename)
+			if err != nil {
+				return err
+			}
+		}
 		c.logf("processing %s [%d:%d]", chunk.filename, chunk.start, chunk.end)
-		if err := chunk.writeTo(w); err != nil {
+		if err := chunk.copyChunk(f, w); err != nil {
 			return c.err(err.Error())
+		}
+	}
+	if f != nil {
+		if err := f.Close(); err != nil {
+			return err
 		}
 	}
 	return w.Close()
