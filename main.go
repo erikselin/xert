@@ -326,12 +326,9 @@ func mapWorker(c context) error {
 		return err
 	}
 	if hasReducer() {
-		c.log("sorting...")
+		c.log("sorting")
 		for _, b := range buffers[c.workerID] {
 			b.sort()
-			if b.spills > 1 {
-				c.log("sorting spills...")
-			}
 			if err := b.externalSort(); err != nil {
 				return err
 			}
@@ -354,7 +351,7 @@ func mapStdoutHandler(c context, r io.ReadCloser) error {
 	if hasOutput() {
 		return outputStream(c, r, tempOutput)
 	}
-	return closedStream(c, r)
+	return closedOutputStream(c, r)
 }
 
 func reduceWorker(c context) error {
@@ -375,7 +372,7 @@ func reduceStdoutHandler(c context, r io.ReadCloser) error {
 	if hasOutput() {
 		return outputStream(c, r, tempOutput)
 	}
-	return closedStream(c, r)
+	return closedOutputStream(c, r)
 }
 
 // rollback ensure graceful termination of a failed job. It kills and running mapper or reducer
