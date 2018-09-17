@@ -235,25 +235,27 @@ func run() {
 	log.Print("configuration:")
 	log.Print("")
 	log.Printf("  mappers: %d", mappers)
-	log.Printf("  reducers: %d", reducers)
+	if hasReducer() {
+		log.Printf("  reducers: %d", reducers)
+	}
 	log.Printf("  memory: %s", memoryString)
 	log.Printf("  temporary directory: %s", tempDir)
 	log.Print("")
 	log.Print("plan:")
 	log.Print("")
 	indent := "  "
-	if len(output) > 0 {
+	if hasOutput() {
 		log.Printf("%s->  output (%s)", indent, output)
 		indent = indent + "  "
 	}
-	if len(reducer) > 0 {
+	if hasReducer() {
 		log.Printf("%s->  reduce (%s)", indent, reducer)
 		indent = indent + "  "
 		log.Printf("%s->  partition and sort", indent)
 		indent = indent + "  "
 	}
 	log.Printf("%s->  map (%s)", indent, mapper)
-	if len(input) > 0 {
+	if hasInput() {
 		log.Printf("%s  ->  input (%s)", indent, input)
 	}
 	log.Print("")
@@ -266,7 +268,7 @@ func run() {
 	durationMappers := time.Since(startTimeMappers)
 	log.Print("")
 	var durationReducers time.Duration
-	if len(reducer) > 0 {
+	if hasReducer() {
 		log.Print("running reducer stage")
 		log.Print("")
 		startTimeReducers := time.Now()
@@ -280,7 +282,7 @@ func run() {
 	log.Print("")
 	commit()
 	log.Printf("  mappers runtime: %s", durationMappers.String())
-	if len(reducer) > 0 {
+	if hasReducer() {
 		log.Printf("  reducers runtime: %s", durationReducers.String())
 	}
 	log.Printf("  total runtime: %s", time.Since(startTime).String())

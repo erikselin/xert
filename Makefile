@@ -1,6 +1,6 @@
 BINARY := xrt
 
-BUILD_VERSION := 0.3.2
+BUILD_VERSION := 0.3.3
 
 LDFLAG_VERSION := main.version=${BUILD_VERSION}
 LDFLAGS        := -ldflags "-X ${LDFLAG_VERSION}"

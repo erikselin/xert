@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"fmt"
 	"io"
 	"os"
 )
@@ -72,22 +73,24 @@ type fileScanner struct {
 	nxt []byte
 }
 
+// next advances the scanner to the next record. The record is read from the read buffer together
+// with bytes from the last record (since it is front compressed). This function is also
+// responsible for growing the record buffer if it is too small to hold the next record.
 func (s *fileScanner) next() bool {
 	s.lst, s.nxt = s.nxt, s.lst
-	if _, err := s.r.Peek(1); err != nil {
-		if err != io.EOF {
-			s.e = err
-		}
-		return false
-	}
 	pn, err := readVarInt(s.r)
 	if err != nil {
-		s.e = err
+		if err != io.EOF {
+			s.e = fmt.Errorf("error reading prefix length from file: %v", err)
+		}
+		if err := s.f.Close(); s.e == nil && err != nil {
+			s.e = fmt.Errorf("error closing file: %v", err)
+		}
 		return false
 	}
 	rn, err := readVarInt(s.r)
 	if err != nil {
-		s.e = err
+		s.e = fmt.Errorf("error reading record length from file: %v", err)
 		return false
 	}
 	n := pn + rn
@@ -99,7 +102,7 @@ func (s *fileScanner) next() bool {
 	for i := pn; i < n; {
 		m, err := s.r.Read(s.nxt[i:n])
 		if err != nil {
-			s.e = err
+			s.e = fmt.Errorf("error reading record from file: %v", err)
 			return false
 		}
 		i += m
@@ -129,12 +132,17 @@ func newFileScanner(filename string) *fileScanner {
 	return s
 }
 
+// readVarInt reads a variable length integer from a read buffer. This function will return a
+// io.EOF iff the read of the first byte of the varint results in a io.EOF.
 func readVarInt(r *bufio.Reader) (int, error) {
 	n := 0
 	for i := 0; ; i++ {
 		b, err := r.ReadByte()
 		if err != nil {
-			return -1, err
+			if i == 0 && err == io.EOF {
+				return -1, err
+			}
+			return -1, fmt.Errorf("error reading varint byte: %v", err)
 		}
 		n |= int(b&0x7F) << uint(7*i)
 		if b&0x80 == 0 {
