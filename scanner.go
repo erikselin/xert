@@ -77,6 +77,9 @@ type fileScanner struct {
 // with bytes from the last record (since it is front compressed). This function is also
 // responsible for growing the record buffer if it is too small to hold the next record.
 func (s *fileScanner) next() bool {
+	if s.e != nil {
+		return false
+	}
 	s.lst, s.nxt = s.nxt, s.lst
 	pn, err := readVarInt(s.r)
 	if err != nil {
