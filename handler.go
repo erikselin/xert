@@ -23,14 +23,6 @@ func logStream(c context, r io.ReadCloser) error {
 	return s.Err()
 }
 
-func closedOutputStream(c context, r io.ReadCloser) error {
-	buf := make([]byte, 1)
-	if _, err := r.Read(buf); err == nil {
-		return c.err("unexpected write to stdout for job without --output")
-	}
-	return nil
-}
-
 func inputStream(c context, w io.WriteCloser, inputChunks chan *chunk) error {
 	var f *os.File
 	var err error

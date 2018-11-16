@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"errors"
 	"flag"
 	"fmt"
@@ -31,9 +32,9 @@ const (
 
 var (
 	// cli flag defaults
-	defaultMappers      = 4
-	defaultReducers     = 4
-	defaultMemoryString = "256m"
+	defaultMappers      = 1
+	defaultReducers     = 1
+	defaultMemoryString = "16m"
 	defaultTempDir      = os.TempDir()
 
 	// set by ldflags at compile time
@@ -125,15 +126,14 @@ func main() {
 
 func usage() {
 	fmt.Printf("usage: xrt [--help] [--%s] <options>\n", argShowVersion)
-	fmt.Printf(" --%s <input>   the input file or directory\n", argInput)
-	fmt.Printf(" --%s <cmd>    mapper command (required)\n", argMapper)
-	fmt.Printf(" --%s <num>   number of mappers (default: %d)\n", argMappers, defaultMappers)
-	fmt.Printf(" --%s <mem>    memory limit (default: %s)\n", argMemoryString, defaultMemoryString)
-	fmt.Printf(" --%s <dir>    output directory\n", argOutput)
-	fmt.Printf(" --%s <file>  profile file\n", argProfile)
-	fmt.Printf(" --%s <cmd>   reducer command\n", argReducer)
-	fmt.Printf(" --%s <num>  number of reducers (default: %d)\n", argReducers, defaultReducers)
-	fmt.Printf(" --%s <dir>   temporary directory (default : %s)\n", argTempDir, defaultTempDir)
+	fmt.Printf(" --%s <input>   Input pattern, example: path/to/file_*.tsv\n", argInput)
+	fmt.Printf(" --%s <cmd>    Mapper command (required)\n", argMapper)
+	fmt.Printf(" --%s <num>   Number of mappers (default: %d)\n", argMappers, defaultMappers)
+	fmt.Printf(" --%s <mem>    Memory limit, example: 1k, 2m, 3g, 4t (default: %s)\n", argMemoryString, defaultMemoryString)
+	fmt.Printf(" --%s <dir>    Output directory, if not set any output will go to stdout\n", argOutput)
+	fmt.Printf(" --%s <cmd>   Reducer command, do not set for a map-only job\n", argReducer)
+	fmt.Printf(" --%s <num>  Number of reducers (default: %d)\n", argReducers, defaultReducers)
+	fmt.Printf(" --%s <dir>   Temporary directory (default : %s)\n", argTempDir, defaultTempDir)
 }
 
 func setup() (err error) {
@@ -278,9 +278,11 @@ func run() {
 		durationReducers = time.Since(startTimeReducers)
 		log.Print("")
 	}
-	log.Print("committing")
-	log.Print("")
-	commit()
+	if hasOutput() {
+		log.Print("committing")
+		log.Print("")
+		commit()
+	}
 	log.Printf("  mappers runtime: %s", durationMappers.String())
 	if hasReducer() {
 		log.Printf("  reducers runtime: %s", durationReducers.String())
@@ -288,6 +290,10 @@ func run() {
 	log.Printf("  total runtime: %s", time.Since(startTime).String())
 	log.Print("")
 	log.Print("success")
+	if !hasOutput() {
+		printOutput()
+	}
+	cleanup()
 }
 
 // startInterruptHandler launches a handler that will catch the first interrupt signal and attempt
@@ -350,10 +356,7 @@ func mapStdoutHandler(c context, r io.ReadCloser) error {
 	if hasReducer() {
 		return intermediateMapStream(c, r, buffers[c.workerID])
 	}
-	if hasOutput() {
-		return outputStream(c, r, tempOutput)
-	}
-	return closedOutputStream(c, r)
+	return outputStream(c, r, tempOutput)
 }
 
 func reduceWorker(c context) error {
@@ -371,23 +374,18 @@ func reduceStdinHandler(c context, w io.WriteCloser) error {
 }
 
 func reduceStdoutHandler(c context, r io.ReadCloser) error {
-	if hasOutput() {
-		return outputStream(c, r, tempOutput)
-	}
-	return closedOutputStream(c, r)
+	return outputStream(c, r, tempOutput)
 }
 
 // rollback ensure graceful termination of a failed job. It kills and running mapper or reducer
 // commands, ensures no more are spawned and removes any temorary data.
 func rollback(err error) {
 	rollbackOnce.Do(func() {
+		log.Print("error - attempting rollback")
+		log.Print("")
 		log.Print(err)
 		killAll()
-		// BUG this will break on windows since it does not allow removal of open files and by the
-		// time this is called it is possible fds in the tempdir are still open.
-		if err := os.RemoveAll(tempDir); err != nil {
-			log.Printf("failed to remove temporary data directory %s - %v", tempDir, err)
-		}
+		cleanup()
 		log.Print("failed")
 		os.Exit(1)
 	})
@@ -395,16 +393,46 @@ func rollback(err error) {
 
 // commit ensures transactional termination of succesfull jobs. If the job is configured to create
 // output commit uses a directory move to transactioanlly "commit" the output from a temporary
-// folder to the final output folder. commit also cleans up any temporary files.
+// folder to the final output folder.
 func commit() {
-	if hasOutput() {
-		if err := os.Rename(tempOutput, output); err != nil {
-			log.Printf("  error moving output data from %s to %s - %v", tempOutput, output, err)
-			log.Printf("  temporary data directory %s was not removed", tempDir)
-			log.Print("failed")
+	if err := os.Rename(tempOutput, output); err != nil {
+		log.Printf("  error moving output data from %s to %s - %v", tempOutput, output, err)
+		log.Printf("  temporary data directory %s was not removed", tempDir)
+		log.Print("failed")
+		os.Exit(1)
+	}
+}
+
+// printOutput reads the output from the temporary directory and copies it to stdout. This is used
+// by runs without output to display the output in the terminal instead of writting it to a file.
+func printOutput() {
+	files, err := ioutil.ReadDir(tempOutput)
+	if err != nil {
+		log.Printf("  error reading output data in %s - %v", tempOutput, err)
+		os.Exit(1)
+	}
+	for _, file := range files {
+		filename := path.Join(tempOutput, file.Name())
+		f, err := os.Open(filename)
+		if err != nil {
+			log.Printf("  error reading output data in %s - %v", filename, err)
 			os.Exit(1)
 		}
+		r := bufio.NewReader(f)
+		w := bufio.NewWriter(os.Stdout)
+		if _, err := io.Copy(w, r); err != nil {
+			log.Printf("  error copying output data in %s to stdout - %v", filename, err)
+		}
+		if err := w.Flush(); err != nil {
+			log.Printf("  error copying output data in %s to stdout - %v", filename, err)
+		}
 	}
+}
+
+// cleanup removes any remaining temporary files.
+func cleanup() {
+	// BUG this will break on windows since it does not allow removal of open files and by the
+	// time this is called it is possible fds in the tempdir are still open.
 	if err := os.RemoveAll(tempDir); err != nil {
 		log.Printf("  failed to remove temporary data directory %s - %v", tempDir, err)
 	}
@@ -421,6 +449,7 @@ func hasMapper() bool {
 func hasReducer() bool {
 	return len(reducer) > 0
 }
+
 func hasOutput() bool {
 	return len(output) > 0
 }
