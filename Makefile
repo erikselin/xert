@@ -15,7 +15,7 @@ default:
 
 test: default
 	go test -v
-	tests/run 4 1000 16m 16k
+	tests/run
 
 dist:
 	mkdir ${PACKAGE}
@@ -28,6 +28,6 @@ dist:
 clean:
 	rm -rf ${BINARY}
 	rm -f *.tar.gz
-	rm -rf tests/data-*
 	rm -f tests/log-*
 	rm -rf tests/output-*
+	rm -rf tests/input

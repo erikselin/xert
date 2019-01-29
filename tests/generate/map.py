@@ -2,21 +2,14 @@ from random import randint
 from sys import stdin, stdout, argv
 
 
-def record(mode, keys):
-    record = ''
-    if mode == 'skewed':
-        if randint(0, 1) == 0:
-            return '0' * 100
-    part = "".join([str(randint(0, 9)) * 5 for _ in range(10)])
-    if keys == 'long':
-        return '0' * 50 + part
-    return part + part
+def row(size):
+    f = int(1 + size / 4)
+    return "".join([str(randint(0, 9)) * f for _ in range(32)])[0:size] + "\n"
 
 
 if __name__ == "__main__":
-    mode = argv[1]
-    keys = argv[2]
-    count = int(argv[3])
-    for _ in range(count):
-        row = record(mode, keys)
-        stdout.write(row + '\n')
+    size = int(argv[1])
+    while size > 0:
+        s = min([size, randint(1, 32)])
+        stdout.write(row(s))
+        size = size - s

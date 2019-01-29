@@ -1,7 +1,6 @@
 .DS_Store
 xrt
 xrt-*
-tests/data-*
+tests/input
 tests/log-*
 tests/output-*
-tests/profile-*

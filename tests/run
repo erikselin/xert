@@ -5,100 +5,80 @@ set +x
 
 ROOT=$(dirname "${BASH_SOURCE[0]}" )
 
-cores=$1
-records=$2
+cores=8
+memory=16k
+size=265000
+msize=$(($size/$cores))
 
-memory=(
-	"$3"
-	"$4"
-)
+echo "=== GENERATE"
+dataset=$ROOT/input
+log=$ROOT/log-input.log
+rm -f -r $dataset
+rm -f $log
+$ROOT/../xrt --mappers $cores \
+			 --mapper "python3 $ROOT/generate/map.py $msize" \
+			 --output $dataset &> $log
 
-modes=(
-	"uniform"
-	"skewed"
-)
+tst=string-search
+echo "=== RUN   $tst"
+output=$ROOT/output-$tst
+log=$ROOT/log-$tst.log
+rm -f -r $output
+rm -f $log
+$ROOT/../xrt --mappers $cores \
+			 --memory $memory \
+			 --input "$dataset/*" \
+			 --mapper "python3 $ROOT/$tst/map.py" \
+			 --output $output &> $log
+if python3 $ROOT/$tst/check.py $dataset $output; then
+	runtime="$(cat $log | grep "total runtime" | sed "s/.*total runtime: \(.*\)/\1/")"
+	echo "--- PASS: $tst ($runtime)"
+else
+	echo "--- FAIL: $tst"
+	exit 1
+fi
 
-keys=(
-	"short"
-	"long"
-)
+tst=word-count
+echo "=== RUN   $tst"
+output=$ROOT/output-$tst
+log=$ROOT/log-$tst.log
+rm -f -r $output
+rm -f $log
+$ROOT/../xrt --mappers $cores \
+             --reducers $cores \
+			 --memory $memory \
+			 --input "$dataset/*" \
+			 --mapper "python3 $ROOT/$tst/map.py" \
+			 --reducer "python3 $ROOT/$tst/reduce.py" \
+			 --output $output &> $log
+if python3 $ROOT/$tst/check.py $dataset $output; then
+	runtime="$(cat $log | grep "total runtime" | sed "s/.*total runtime: \(.*\)/\1/")"
+	echo "--- PASS: $tst ($runtime)"
+else
+	echo "--- FAIL: $tst"
+	exit 1
+fi
 
-size=$(($records/$cores))
-
-for mode in "${modes[@]}"; do
-	for key in "${keys[@]}"; do
-		dataset=$ROOT/data-$mode-$key
-		log=$ROOT/log-generate-$mode-$key
-		rm -f -r $dataset
-		rm -f $log
-		$ROOT/../xrt --mappers $cores \
-					 --mapper "python3 $ROOT/generate/map.py $mode $keys $size" \
-					 --output $dataset &> $log
-
-		for mem in "${memory[@]}"; do
-			tst=string-search
-			echo "=== RUN   $tst-$mode-$key-$mem"
-			output=$ROOT/output-$tst-$mode-$key-$mem
-			log=$ROOT/log-$tst-$mode-$key-$mem.log
-			rm -f -r $output
-			rm -f $log
-			$ROOT/../xrt --mappers $cores \
-						 --memory $mem \
-						 --input "$dataset/*" \
-						 --mapper "python3 $ROOT/$tst/map.py" \
-						 --output $output &> $log
-			if python3 $ROOT/$tst/check.py $dataset $output; then
-				runtime="$(cat $log | grep "total runtime" | sed "s/.*total runtime: \(.*\)/\1/")"
-				echo "--- PASS: $tst-$mode-$key-$mem ($runtime)"
-			else
-				echo "--- FAIL: $tst-$dataset-$mem"
-				exit 1
-			fi
-
-			tst=word-count
-			echo "=== RUN   $tst-$mode-$key-$mem"
-			output=$ROOT/output-$tst-$mode-$key-$mem
-			log=$ROOT/log-$tst-$mode-$key-$mem.log
-			rm -f -r $output
-			rm -f $log
-			$ROOT/../xrt --mappers $cores \
-                         --reducers $cores \
-						 --memory $mem \
-						 --input "$dataset/*" \
-						 --mapper "python3 $ROOT/$tst/map.py" \
-						 --reducer "python3 $ROOT/$tst/reduce.py" \
-						 --output $output &> $log
-			if python3 $ROOT/$tst/check.py $dataset $output; then
-				runtime="$(cat $log | grep "total runtime" | sed "s/.*total runtime: \(.*\)/\1/")"
-				echo "--- PASS: $tst-$mode-$key-$mem ($runtime)"
-			else
-				echo "--- FAIL: $tst-$dataset-$mem"
-				exit 1
-			fi
-
-			tst=parallel-sort
-			echo "=== RUN   $tst-$mode-$key-$mem"
-			output=$ROOT/output-$tst-$mode-$key-$mem
-			log=$ROOT/log-$tst-$mode-$key-$mem.log
-			rm -f -r $output
-			rm -f $log
-			$ROOT/../xrt --mappers $cores \
-                         --reducers $cores \
-						 --memory $mem \
-						 --input "$dataset/*" \
-						 --mapper "python3 $ROOT/$tst/map.py" \
-						 --reducer "python3 $ROOT/$tst/reduce.py" \
-						 --output $output &> $log
-			if python3 $ROOT/$tst/check.py $dataset $output; then
-				runtime="$(cat $log | grep "total runtime" | sed "s/.*total runtime: \(.*\)/\1/")"
-				echo "--- PASS: $tst-$mode-$key-$mem ($runtime)"
-			else
-				echo "--- FAIL: $tst-$dataset-$mem"
-				exit 1
-			fi
-		done
-	done
-done
+tst=parallel-sort
+echo "=== RUN   $tst"
+output=$ROOT/output-$tst
+log=$ROOT/log-$tst.log
+rm -f -r $output
+rm -f $log
+$ROOT/../xrt --mappers $cores \
+             --reducers 1 \
+			 --memory $memory \
+			 --input "$dataset/*" \
+			 --mapper "python3 $ROOT/$tst/map.py" \
+			 --reducer "python3 $ROOT/$tst/reduce.py" \
+			 --output $output &> $log
+if python3 $ROOT/$tst/check.py $dataset $output; then
+	runtime="$(cat $log | grep "total runtime" | sed "s/.*total runtime: \(.*\)/\1/")"
+	echo "--- PASS: $tst ($runtime)"
+else
+	echo "--- FAIL: $tst"
+	exit 1
+fi
 
 echo "PASS"
 echo "ok  	integration tests"

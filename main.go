@@ -133,7 +133,7 @@ func usage() {
 	fmt.Printf(" --%s <dir>    Output directory, if not set any output will go to stdout\n", argOutput)
 	fmt.Printf(" --%s <cmd>   Reducer command, do not set for a map-only job\n", argReducer)
 	fmt.Printf(" --%s <num>  Number of reducers (default: %d)\n", argReducers, defaultReducers)
-	fmt.Printf(" --%s <dir>   Temporary directory (default : %s)\n", argTempDir, defaultTempDir)
+	fmt.Printf(" --%s <dir>   Temporary directory (default: %s)\n", argTempDir, defaultTempDir)
 }
 
 func setup() (err error) {
