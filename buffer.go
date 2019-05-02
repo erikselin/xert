@@ -13,6 +13,7 @@ type buffer struct {
 	head     int
 	tail     int
 	buf      []byte
+	records  int
 	spills   int
 	spillDir string
 }
@@ -52,6 +53,7 @@ func (b *buffer) add(record []byte) error {
 		}
 	}
 	b.appendRecord(record)
+	b.records++
 	return nil
 }
 
@@ -92,6 +94,10 @@ func (b *buffer) spill() error {
 	return w.Close()
 }
 
+func (b *buffer) needExternalSort() bool {
+	return b.spills > 1
+}
+
 // extSort ...
 func (b *buffer) externalSort() error {
 	// During the final merge phase we will have at most mappers*reducers open files
@@ -101,7 +107,7 @@ func (b *buffer) externalSort() error {
 	if ways < 16 {
 		ways = 16
 	}
-	for b.spills > 1 {
+	for b.needExternalSort() {
 		newSpills := 0
 		for i := 0; i <= b.spills/ways; i++ {
 			start := i * ways
@@ -186,6 +192,7 @@ func newBuffer(bufMem int, spillDir string) *buffer {
 		head:     0,
 		tail:     bufMem,
 		buf:      make([]byte, bufMem),
+		records:  0,
 		spills:   0,
 		spillDir: spillDir,
 	}

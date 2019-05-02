@@ -269,6 +269,9 @@ func run() {
 	log.Print("")
 	var durationReducers time.Duration
 	if hasReducer() {
+		// TODO:
+		// log.Print("intermediate record distribution:"
+		// log.Print("")
 		log.Print("running reducer stage")
 		log.Print("")
 		startTimeReducers := time.Now()
@@ -335,10 +338,13 @@ func mapWorker(c context) error {
 	}
 	if hasReducer() {
 		c.log("sorting")
-		for _, b := range buffers[c.workerID] {
+		for i, b := range buffers[c.workerID] {
 			b.sort()
-			if err := b.externalSort(); err != nil {
-				return err
+			if b.needExternalSort() {
+				c.logf("merging %d spill files for reducer %d", b.spills, i)
+				if err := b.externalSort(); err != nil {
+					return err
+				}
 			}
 		}
 	}
@@ -362,6 +368,11 @@ func mapStdoutHandler(c context, r io.ReadCloser) error {
 func reduceWorker(c context) error {
 	c.log("reducer starting")
 	defer c.log("done")
+	records := 0
+	for i := range buffers {
+		records += buffers[i][c.workerID].records
+	}
+	c.logf("processing %d records", records)
 	return c.exec(reducer, reduceStdinHandler, reduceStdoutHandler, logStream)
 }
 
