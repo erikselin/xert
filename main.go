@@ -125,7 +125,7 @@ func main() {
 }
 
 func usage() {
-	fmt.Printf("usage: xrt [--help] [--%s] <options>\n", argShowVersion)
+	fmt.Printf("usage: xrt [--help] [--%s] <arguments>\n", argShowVersion)
 	fmt.Printf(" --%s <input>   Input pattern, example: path/to/file_*.tsv\n", argInput)
 	fmt.Printf(" --%s <cmd>    Mapper command (required)\n", argMapper)
 	fmt.Printf(" --%s <num>   Number of mappers (default: %d)\n", argMappers, defaultMappers)

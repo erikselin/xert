@@ -5,3 +5,4 @@ tests/data-*
 tests/log-*
 tests/output-*
 tests/profile-*
+tests/input
