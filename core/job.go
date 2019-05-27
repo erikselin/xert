@@ -1,27 +1,50 @@
+// Package xrt/core provides the xrt runtime together with a simple Go API making it possible to
+// implement xrt tasks in Go which are compiled into a single binary and executed without any
+// cross-process communication. The xrt/core Go API is what the main xrt tool is using internally
+// and can be used as a optimization if a regular xrt task is becoming too slow.
+//
+// Example:
+//
+//    import (
+//        xrt "github.com/erikselin/xrt/core"
+//    )
+//
 package core
 
-import "io"
+import (
+	"io"
+	"os"
+)
 
-// Context ...
-type Context struct {
-	WorkerID int
-	Mappers  int
-	Reducers int
-	Log      Logger
+func main() {
+	if err := xrt.
+		NewJob(4, mapper).
+		WithInput("data.csv").
+		WithReducer(4, reducer).
+		WithOutput("results.csv").
+		Run(); err != nil {
+		os.Exit(1)
+	}
 }
 
 // MapperContext ...
 type MapperContext struct {
-	Context
-	Input  io.Reader
-	Output RecordWriter
+	WorkerID int
+	Mappers  int
+	Reducers int
+	Log      Logger
+	Input    io.Reader
+	Output   RecordWriter
 }
 
 // ReducerContext ...
 type ReducerContext struct {
-	Context
-	Input  RecordReader
-	Output io.Writer
+	WorkerID int
+	Mappers  int
+	Reducers int
+	Log      Logger
+	Input    RecordReader
+	Output   io.Writer
 }
 
 // MapperFunc ...
@@ -44,21 +67,58 @@ type RecordReader interface {
 
 // Job ...
 type Job struct {
-	Input    string
-	Mapper   MapperFunc
-	Mappers  int
-	Memory   string
-	Output   string
-	Reducer  ReducerFunc
-	Reducers int
-	TempDir  string
+	input    string
+	mapper   MapperFunc
+	mappers  int
+	memory   string
+	output   string
+	reducer  ReducerFunc
+	reducers int
+	tempDir  string
+}
+
+func (j Job) validate() error {
+
+}
+
+func (j Job) run() error {
+
 }
 
 // Run ...
-func Run(job Job) error {
-
+func (j Job) Run() error {
+	if err := j.validate(); err != nil {
+		return err
+	}
+	return j.run()
 }
 
-func NewJob() (Job, error) {
+// WithInput ...
+func (j Job) WithInput(input string) Job {
+	return Job{input, j.mapper, j.mappers, j.memory, j.output, j.reducer, j.reducers, j.tempDir}
+}
 
+// WithMemory ...
+func (j Job) WithMemory(memory string) Job {
+	return Job{j.input, j.mapper, j.mappers, memory, j.output, j.reducer, j.reducers, j.tempDir}
+}
+
+// WithOutput ...
+func (j Job) WithOutput(output string) Job {
+	return Job{j.input, j.mapper, j.mappers, j.memory, output, j.reducer, j.reducers, j.tempDir}
+}
+
+// WithReduce ...
+func (j Job) WithReduce(reducers int, reducer ReducerFunc) Job {
+	return Job{j.input, j.mapper, j.mappers, j.memory, j.output, reducer, reducers, j.tempDir}
+}
+
+// WithTempDir ...
+func (j Job) WithTempDir(tempDir string) Job {
+	return Job{j.input, j.mapper, j.mappers, j.memory, j.output, j.reducer, j.reducers, tempDir}
+}
+
+// NewJob ...
+func NewJob(mappers int, mapper MapperFunc) Job {
+	return Job{j.input, mapper, mappers, j.memory, j.output, j.reducer, j.reducers, j.tempDir}
 }
