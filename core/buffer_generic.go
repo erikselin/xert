@@ -1,6 +1,6 @@
 // +build gccgo !amd64
 
-package main
+package core
 
 import "bytes"
 

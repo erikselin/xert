@@ -1,7 +1,7 @@
 // +build !gccgo
 // +build amd64
 
-package main
+package core
 
 //go:noescape
 func readInt(b []byte, i int) int

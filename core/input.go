@@ -1,7 +1,6 @@
-package main
+package core
 
 import (
-	"fmt"
 	"io"
 	"io/ioutil"
 	"os"
@@ -15,11 +14,62 @@ const (
 	recordSeparator byte  = '\n'
 )
 
-type chunk struct {
+type input struct {
+}
+
+func (in *input) newWorkerInput(conf WorkerConfig) workerInput {
+}
+
+func newInput(input string) *input {
+}
+
+type workerInput struct {
+	splits chan *split
+	split  *split
+	pos    int
+	f      *os.File
+}
+
+// Read ...
+func (wi *workerInput) Read(p []byte) (int, error) {
+	j := 0
+	for j < len(p) {
+		if i.split == nil {
+			return j, io.EOF
+		}
+		n, err := i.split.writeTo(p[j:])
+		j += n
+		if err != nil {
+			if err == io.EOF {
+				i.nextSplit()
+			} else {
+				return -1, err
+			}
+		}
+	}
+	return j, nil
+}
+
+func newInput(splits chan *split) input {
+	i := input{
+		splits: splits,
+	}
+	i.nextSplit()
+	return i
+}
+
+type split struct {
 	filename string
 	start    int64
 	end      int64
 	err      error
+}
+
+func (s *split) writeTo(p []byte) (int, error) {
+	if pos == 0 {
+
+	}
+
 }
 
 func (c *chunk) copyChunk(f *os.File, w io.Writer) error {
@@ -81,52 +131,6 @@ func enumerateChunks(input string) (chan *chunk, error) {
 	chunks := make(chan *chunk)
 	go startWalk(root, regex, chunks)
 	return chunks, nil
-}
-
-func extractRoot(input string) (string, error) {
-	root := ""
-	part := ""
-	for _, c := range input {
-		switch c {
-		case '*', '?', '{', '[':
-			return root, nil
-		case '/':
-			root = fmt.Sprintf("%s%s%c", root, part, c)
-			part = ""
-		default:
-			part = fmt.Sprintf("%s%c", part, c)
-		}
-	}
-	if root == "" {
-		return os.Getwd()
-	}
-	return root, nil
-}
-
-func extractRegex(input string) (*regexp.Regexp, error) {
-	regex := "^"
-	for _, c := range input {
-		switch c {
-		case '.', '$', '(', ')', '|', '+':
-			regex = fmt.Sprintf("%s%c", regex, '\\')
-		case '*':
-			regex = fmt.Sprintf("%s%s", regex, "[^/]")
-		case '?':
-			regex = fmt.Sprintf("%s%c", regex, '.')
-			continue
-		case '{':
-			regex = fmt.Sprintf("%s%s", regex, "(?:")
-			continue
-		case ',':
-			regex = fmt.Sprintf("%s%c", regex, '|')
-			continue
-		case '}':
-			regex = fmt.Sprintf("%s%c", regex, ')')
-			continue
-		}
-		regex = fmt.Sprintf("%s%c", regex, c)
-	}
-	return regexp.Compile(fmt.Sprintf("%s$", regex))
 }
 
 func startWalk(root string, regex *regexp.Regexp, chunks chan *chunk) {
