@@ -1,4 +1,7 @@
 // Package core ...
+//
+// Example
+//
 package core
 
 import (
@@ -82,218 +85,247 @@ type Config struct {
 	Memory   string
 }
 
-// RunM ...
-func RunM(
+// NewJob ...
+func NewJob(config Config) JobWithoutInputOutput {
+	return jobWithoutInput{config}
+}
+
+// JobWithoutInputOutput ...
+type JobWithoutInputOutput interface {
+	WithInput(string) JobWithInput
+	WithOutput(string) JobWithOutput
+	RunMapJob(func(Context) error) error
+	RunMapReduceJob(
+		func(Context, RecordWriter) error,
+		func(Context, RecordReader) error,
+	) error
+}
+
+type jobWithoutInputOutput struct {
+	config Config
+}
+
+func (j jobWithoutInputOutput) WithInput(input string) JobWithInput {
+	return jobWithInput{j.config, input}
+}
+
+func (j jobWithoutInputOutput) WithOutput(output string) JobWithOutput {
+	return jobWithOutput{j.config, output}
+}
+
+func (j jobWithoutInputOutput) RunMapJob(
 	mapper func(Context) error,
-	config Config,
 ) error {
-	return run(
-		"",
-		func(c Context, r io.Reader, w io.Writer, _ RecordWriter) error {
+	return runMap(
+		j.config,
+		func(c Context, r io.Reader, w io.Writer) error {
 			return mapper(c)
 		},
 		"",
-		output,
-		config,
+		"",
 	)
 }
 
-// RunIM ...
-func RunIM(
-	input string,
-	mapper func(Context, io.Reader) error,
-	config Config,
+func (j jobWithoutInputOutput) RunMapReduceJob(
+	mapper func(Context, RecordWriter) error,
+	reducer func(Context, RecordReader) error,
 ) error {
-	return run(
-		input,
-		func(c Context, r io.Reader, w io.Writer, _ RecordWriter) error {
+	return runMapReduce(
+		j.config,
+		func(c Context, r io.Reader, w RecordWriter) error {
+			return mapper(c, w)
+		},
+		func(c Context, r RecordReader, w io.Writer) error {
+			return reducer(c, r)
+		},
+		"",
+		"",
+	)
+}
+
+// JobWithInput ...
+type JobWithInput interface {
+	RunMapJob(func(Context, io.Reader) error) error
+	RunMapReduceJob(
+		func(Context, io.Reader, RecordWriter) error,
+		func(Context, RecordReader) error,
+	) error
+	WithOutput(string) JobWithInputOutput
+}
+
+type jobWithInput struct {
+	config Config
+	input  string
+}
+
+func (j jobWithInput) WithOutput(output string) JobWithInputOutput {
+	return jobWithInputOutput{j.config, j.input, output}
+}
+
+func (j jobWithInput) RunMapJob(
+	mapper func(Context, io.Reader) error,
+) error {
+	return runMap(
+		j.config,
+		func(c Context, r io.Reader, w io.Writer) error {
 			return mapper(c, r)
 		},
+		j.input,
 		"",
-		output,
-		config,
 	)
 }
 
-func RunMO(
+func (j jobWithInput) RunMapReduceJob(
+	mapper func(Context, io.Reader, RecordWriter) error,
+	reducer func(Context, RecordReader) error,
+) error {
+	return runMapReduce(
+		j.config,
+		func(c Context, r io.Reader, w RecordWriter) error {
+			return mapper(c, r, w)
+		},
+		func(c Context, r RecordReader) error {
+			return reducer(c, r)
+		},
+		j.input,
+		"",
+	)
+}
+
+// JobWithOutput ...
+type JobWithOutput interface {
+	RunMapJob(func(Context) error) error
+	RunMapReduceJob(
+		func(Context, RecordWriter) error,
+		func(Context, RecordReader, io.Writer) error,
+	) error
+	WithInput(string) JobWithInputOutput
+}
+
+type jobWithOutput struct {
+	config Config
+	output string
+}
+
+// WithInput ...
+func (j jobWithOutput) WithInput(input string) JobWithInputOutput {
+	return jobWithInputOutput{j.config, input, j.output}
+}
+
+func (j jobWithOutput) RunMapJob(
 	mapper func(Context, io.Writer) error,
-	output string,
-	config Config,
 ) error {
-	return run(
-		"",
-		func(c Context, r io.Reader, w io.Writer, _ RecordWriter) error {
+	return runMap(
+		j.config,
+		func(c Context, r io.Reader, w io.Writer) error {
 			return mapper(c, w)
 		},
-		output,
-		output,
-		config,
+		"",
+		j.output,
 	)
 }
 
-func RunIMO(
-	input string,
+func (j jobWithOutput) RunMapReduceJob(
+	mapper func(Context, RecordWriter) error,
+	reducer func(Context, RecordReader, io.Writer) error,
+) error {
+	return runMapReduce(
+		j.config,
+		func(c Context, r io.Reader, w RecordWriter) error {
+			return mapper(c, w)
+		},
+		func(c Context, r RecordReader, w io.Writer) error {
+			return reducer(c, r, w)
+		},
+		"",
+		j.output,
+	)
+}
+
+// JobWithInputOutput ...
+type JobWithInputOutput interface {
+	RunMapJob(func(Context, io.Reader, io.Writer) error) error
+	RunMapReduceJob(
+		func(Context, io.Reader, RecordWriter) error,
+		func(Context, RecordReader, io.Writer) error,
+	) error
+}
+
+type jobWithInputOutput struct {
+	config Config
+	input  string
+	output string
+}
+
+func (j jobWithInputOutput) RunMapJob(
 	mapper func(Context, io.Reader, io.Writer) error,
-	output string,
-	config Config,
 ) error {
-	return run(
-		input,
-		func(c Context, r io.Reader, w io.Writer, _ RecordWriter) error {
+	return runMap(
+		j.config,
+		func(c Context, r io.Reader, w io.Writer) error {
 			return mapper(c, r, w)
 		},
-		nil,
-		output,
-		config,
+		j.input,
+		j.output,
 	)
 }
 
-func RunMR(
-	mapper func(Context, RecordWriter) error,
-	reducer func(Context, RecordReader) error,
-	config Config,
-) error {
-	return run(
-		"",
-		func(c Context, r io.Reader, _ io.Writer, w RecordWriter) error {
-			return mapper(c, w)
-		},
-		func(c Context, r RecordReader, w io.Writer) error {
-			return reducer(c, r)
-		},
-		"",
-		config,
-	)
-}
-
-func RunIMR(
-	input string,
-	mapper func(Context, io.Reader, RecordWriter) error,
-	reducer func(Context, RecordReader) error,
-	config Config,
-) error {
-	return run(
-		input,
-		func(c Context, r io.Reader, _ io.Writer, w RecordWriter) error {
-			return mapper(c, r, w)
-		},
-		func(c Context, r RecordReader, w io.Writer) error {
-			return reducer(c, r)
-		},
-		"",
-		config,
-	)
-}
-
-func RunMRO(
-	mapper func(Context, RecordWriter) error,
-	reducer func(Context, RecordReader, io.Writer) error,
-	output string,
-	config Config,
-) error {
-	return run(
-		"",
-		func(c Context, r io.Reader, _ io.Writer, w RecordWriter) error {
-			return mapper(c, w)
-		},
-		func(c Context, r RecordReader, w io.Writer) error {
-			return reducer(c, r, w)
-		},
-		output,
-		config,
-	)
-}
-
-func RunIMRO(
-	input string,
+func (j jobWithInputOutput) RunMapReduceJob(
 	mapper func(Context, io.Reader, RecordWriter) error,
 	reducer func(Context, RecordReader, io.Writer) error,
-	output string,
-	config Config,
 ) error {
-	return run(
-		input,
-		func(c Context, r io.Reader, _ io.Writer, w RecordWriter) error {
+	return runMapReduce(
+		j.config,
+		func(c Context, r io.Reader, w RecordWriter) error {
 			return mapper(c, r, w)
 		},
 		func(c Context, r RecordReader, w io.Writer) error {
 			return reducer(c, r, w)
 		},
-		output,
-		config,
+		j.input,
+		j.output,
 	)
 }
 
-func run(
-	input string,
-	mapper func(Context, io.Reader, io.Writer, RecordWriter) error,
-	reducer func(Context, RecordReader, io.Writer) error,
-	output string,
+func runMap(
 	config Config,
+	mapper func(Context, io.Reader, io.Writer) error,
+	input string,
+	output string,
 ) error {
-	startTime := time.Now()
-	conf, err := newConfig(config)
+	conf, err := newConfig(config, input, output)
 	if err != nil {
 		return err
 	}
-	log.Print("starting xrt job")
-	log.Print("")
-	logConfig(conf)
-	log.Print("")
-	log.Print("running mapper stage")
-	log.Print("")
-	startTimeMappers := time.Now()
-	buffers, err := runMappers(conf, mapper)
-	if err != nil {
-		rollback(once, exit, err)
-	}
-	durationMappers := time.Since(startTimeMappers)
-	l.Print("")
-	//var durationReducers time.Duration
-	//if hasReducer() {
-	//	l.Print("running reducer stage")
-	//	l.Print("")
-	//	startTimeReducers := time.Now()
-	//	if err := runReducers(conf, reducers, buffers); err != nil {
-	//		rollback(once, exit, err)
-	//	}
-	//	durationReducers = time.Since(startTimeReducers)
-	//	l.Print("")
-	//}
-	//if hasOutput() {
-	//	l.Print("committing")
-	//	l.Print("")
-	//	commit()
-	//}
-	//l.Printf("  mappers runtime: %s", durationMappers.String())
-	//if hasReducer() {
-	//	l.Printf("  reducers runtime: %s", durationReducers.String())
-	//}
-	//l.Printf("  total runtime: %s", time.Since(startTime).String())
-	//l.Print("")
-	//l.Print("success")
-	//if !hasOutput() {
-	//	printOutput()
-	//}
-	//cleanup()
 }
 
-func logConfig(conf *config) {
+func runMapReduce(
+	config Config,
+	mapper func(Context, io.Reader, RecordWriter) error,
+	reducer func(Context, RecordReader, io.Writer) error,
+	input string,
+	output string,
+) error {
+	var once sync.Once
+	done := make(chan struct{})
+	startTime := time.Now()
+	conf, err := newConfig(config, input, output)
+	if err != nil {
+		return err
+	}
+	log.Print("")
+	log.Print("starting xrt job")
+	log.Print("")
 	log.Print("configuration:")
 	log.Print("")
 	if conf.hasInput() {
 		log.Printf("  input:    %s", conf.input)
 	} else {
-		l.Print("  input:    (none)")
+		log.Print("  input:    (none)")
 	}
-	l.Printf("  mapper:   %s", conf.mapper)
-	l.Printf("  mappers:  %d", conf.mappers)
+	log.Printf("  mappers:  %d", conf.mappers)
 	if conf.hasReducer() {
-		log.Printf("  reducer:  %s", conf.reducer)
 		log.Printf("  reducers: %d", conf.reducers)
-	} else {
-		log.Print("  reducer:  (none)")
-		log.Print("  reducers: (none)")
 	}
 	if conf.hasOutput() {
 		log.Printf("  output:   %s", conf.output)
@@ -302,6 +334,46 @@ func logConfig(conf *config) {
 	}
 	log.Printf("  memory:   %s", conf.memoryString)
 	log.Printf("  tempdir:  %s", conf.tempDir)
+	if err := conf.prepareFileSystem(); err != nil {
+		return err
+	}
+	log.Print("")
+	log.Print("running mapper stage")
+	log.Print("")
+	startTimeMappers := time.Now()
+	buffers, err := runMappers(conf, mapper)
+	if err != nil {
+		rollback(once, done, err)
+	}
+	durationMappers := time.Since(startTimeMappers)
+	log.Print("")
+	var durationReducers time.Duration
+	if conf.hasReducer() {
+		log.Print("running reducer stage")
+		log.Print("")
+		startTimeReducers := time.Now()
+		if err := runReducers(conf, reducer, buffers); err != nil {
+			rollback(once, done, err)
+		}
+		durationReducers = time.Since(startTimeReducers)
+		log.Print("")
+	}
+	if hasOutput() {
+		log.Print("committing")
+		log.Print("")
+		commit()
+	}
+	log.Printf("  mappers runtime: %s", durationMappers.String())
+	if conf.hasReducer() {
+		log.Printf("  reducers runtime: %s", durationReducers.String())
+	}
+	log.Printf("  total runtime: %s", time.Since(startTime).String())
+	log.Print("")
+	log.Print("success")
+	if !hasOutput() {
+		printOutput()
+	}
+	cleanup()
 }
 
 // startInterruptHandler launches a handler that will catch the first interrupt signal and attempt
