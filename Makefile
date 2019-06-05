@@ -1,6 +1,7 @@
 BINARY := xrt
 
-BUILD_VERSION := 0.3.4
+BUILD_VERSION := 0.4.0
+BUILD_DIR := build
 
 LDFLAG_VERSION := main.version=${BUILD_VERSION}
 LDFLAGS        := -ldflags "-X ${LDFLAG_VERSION}"
@@ -11,23 +12,25 @@ GOOS   ?= $(shell go env GOOS)
 PACKAGE := ${BINARY}-${BUILD_VERSION}-${GOARCH}-${GOOS}
 
 default:
-	go build ${LDFLAGS} -o ${BINARY}
+	mkdir ${BUILD_DIR}
+	cd cli && go build ${LDFLAGS} -o ../${BUILD_DIR}/${BINARY}
 
 test: default
 	go test -v
-	tests/run 4 1000 16m 16k
+	cd cli && go test -v
+	cd cli && tests/run 4 1000 16m 16k
 
 dist:
 	mkdir ${PACKAGE}
-	cp README.md ${PACKAGE}/README.md
+	cp cli/README.md ${PACKAGE}/README.md
 	cp LICENSE ${PACKAGE}/LICENSE
-	go build ${LDFLAGS} -o ${PACKAGE}/${BINARY}
+	cd cli && go build ${LDFLAGS} -o ../${PACKAGE}/${BINARY}
 	tar czf ${PACKAGE}.tar.gz ${PACKAGE}
 	rm -rf ${PACKAGE}
 
 clean:
-	rm -rf ${BINARY}
+	rm -rf ${BUILD_DIR}
 	rm -f *.tar.gz
-	rm -rf tests/data-*
-	rm -f tests/log-*
-	rm -rf tests/output-*
+	rm -rf cli/tests/data-*
+	rm -f cli/tests/log-*
+	rm -rf cli/tests/output-*
