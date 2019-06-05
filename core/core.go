@@ -85,11 +85,6 @@ type Config struct {
 	Memory   string
 }
 
-// NewJob ...
-func NewJob(config Config) JobWithoutInputOutput {
-	return jobWithoutInput{config}
-}
-
 // JobWithoutInputOutput ...
 type JobWithoutInputOutput interface {
 	WithInput(string) JobWithInput
@@ -116,13 +111,14 @@ func (j jobWithoutInputOutput) WithOutput(output string) JobWithOutput {
 func (j jobWithoutInputOutput) RunMapJob(
 	mapper func(Context) error,
 ) error {
-	return runMap(
+	return run(
 		j.config,
-		func(c Context, r io.Reader, w io.Writer) error {
+		"",
+		"",
+		func(c *context) error {
 			return mapper(c)
 		},
-		"",
-		"",
+		nil,
 	)
 }
 
@@ -130,17 +126,26 @@ func (j jobWithoutInputOutput) RunMapReduceJob(
 	mapper func(Context, RecordWriter) error,
 	reducer func(Context, RecordReader) error,
 ) error {
-	return runMapReduce(
+	return run(
 		j.config,
-		func(c Context, r io.Reader, w RecordWriter) error {
-			return mapper(c, w)
-		},
-		func(c Context, r RecordReader, w io.Writer) error {
-			return reducer(c, r)
-		},
 		"",
 		"",
+		func(c *context) error {
+			return c.withRecordWriter(func(w *recordWriter) error {
+				return mapper(c, w)
+			})
+		},
+		func(c *context) error {
+			return c.withRecordReader(func(r *recordReader) error {
+				return reducer(c, r)
+			})
+		},
 	)
+}
+
+// NewJob ...
+func NewJob(config Config) JobWithoutInputOutput {
+	return jobWithoutInput{config}
 }
 
 // JobWithInput ...
@@ -165,13 +170,16 @@ func (j jobWithInput) WithOutput(output string) JobWithInputOutput {
 func (j jobWithInput) RunMapJob(
 	mapper func(Context, io.Reader) error,
 ) error {
-	return runMap(
+	return run(
 		j.config,
-		func(c Context, r io.Reader, w io.Writer) error {
-			return mapper(c, r)
-		},
 		j.input,
 		"",
+		func(c *context) error {
+			return c.withInput(func(r io.Reader) error {
+				return mapper(c, i)
+			})
+		},
+		nil,
 	)
 }
 
@@ -179,16 +187,22 @@ func (j jobWithInput) RunMapReduceJob(
 	mapper func(Context, io.Reader, RecordWriter) error,
 	reducer func(Context, RecordReader) error,
 ) error {
-	return runMapReduce(
+	return run(
 		j.config,
-		func(c Context, r io.Reader, w RecordWriter) error {
-			return mapper(c, r, w)
-		},
-		func(c Context, r RecordReader) error {
-			return reducer(c, r)
-		},
 		j.input,
 		"",
+		func(c *context) error {
+			return c.withInput(func(r io.Reader) error {
+				return c.withRecordWriter(func(w *recordWriter) error {
+					return mapper(c, r, w)
+				})
+			})
+		},
+		func(c *context) error {
+			return c.withRecordReader(func(r *recordReader) error {
+				return reducer(c, r)
+			})
+		},
 	)
 }
 
@@ -215,11 +229,16 @@ func (j jobWithOutput) WithInput(input string) JobWithInputOutput {
 func (j jobWithOutput) RunMapJob(
 	mapper func(Context, io.Writer) error,
 ) error {
-	return runMap(
+	return run(
 		j.config,
-		func(c Context, r io.Reader, w io.Writer) error {
-			return mapper(c, w)
+		func(c Context, i *input, o *output, b *buffer) error {
+			w := o.newWriter(c)
+			if err := mapper(c, w); err != nil {
+				return err
+			}
+			return w.close()
 		},
+		nil,
 		"",
 		j.output,
 	)
@@ -229,13 +248,13 @@ func (j jobWithOutput) RunMapReduceJob(
 	mapper func(Context, RecordWriter) error,
 	reducer func(Context, RecordReader, io.Writer) error,
 ) error {
-	return runMapReduce(
+	return run(
 		j.config,
-		func(c Context, r io.Reader, w RecordWriter) error {
-			return mapper(c, w)
+		func(c Context, r io.Reader, w io.Writer, rw RecordWriter) error {
+			return mapper(c, rw)
 		},
-		func(c Context, r RecordReader, w io.Writer) error {
-			return reducer(c, r, w)
+		func(c Context, rr RecordReader, w io.Writer) error {
+			return reducer(c, rr, w)
 		},
 		"",
 		j.output,
@@ -260,13 +279,18 @@ type jobWithInputOutput struct {
 func (j jobWithInputOutput) RunMapJob(
 	mapper func(Context, io.Reader, io.Writer) error,
 ) error {
-	return runMap(
+	return run(
 		j.config,
-		func(c Context, r io.Reader, w io.Writer) error {
-			return mapper(c, r, w)
-		},
 		j.input,
 		j.output,
+		func(c Context) error {
+			return c.withInput(func(r io.Writer) error {
+				return c.withOutputWriter(func(w io.Writer) error {
+					return mapper(c, r, w)
+				})
+			})
+		},
+		nil,
 	)
 }
 
@@ -274,35 +298,31 @@ func (j jobWithInputOutput) RunMapReduceJob(
 	mapper func(Context, io.Reader, RecordWriter) error,
 	reducer func(Context, RecordReader, io.Writer) error,
 ) error {
-	return runMapReduce(
+	return run(
 		j.config,
-		func(c Context, r io.Reader, w RecordWriter) error {
-			return mapper(c, r, w)
-		},
-		func(c Context, r RecordReader, w io.Writer) error {
-			return reducer(c, r, w)
-		},
 		j.input,
 		j.output,
+		func(c Context) error {
+			return c.withInput(func(r io.Writer) error {
+				return c.withRecordWriter(func(w *recordWriter) error {
+					return mapper(c, r, w)
+				})
+			})
+		},
+		func(c Context) error {
+			return c.withRecordReader(func(r *recordReader) error {
+				return c.withOutputWriter(func(w io.Writer) error {
+					return reducer(c, r, w)
+				})
+			})
+		},
 	)
 }
 
-func runMap(
+func run(
 	config Config,
-	mapper func(Context, io.Reader, io.Writer) error,
-	input string,
-	output string,
-) error {
-	conf, err := newConfig(config, input, output)
-	if err != nil {
-		return err
-	}
-}
-
-func runMapReduce(
-	config Config,
-	mapper func(Context, io.Reader, RecordWriter) error,
-	reducer func(Context, RecordReader, io.Writer) error,
+	mapper func(Context, *input, *output, *bufferInput) error,
+	reducer func(Context, *bufferOuput, *output) error,
 	input string,
 	output string,
 ) error {
@@ -320,8 +340,6 @@ func runMapReduce(
 	log.Print("")
 	if conf.hasInput() {
 		log.Printf("  input:    %s", conf.input)
-	} else {
-		log.Print("  input:    (none)")
 	}
 	log.Printf("  mappers:  %d", conf.mappers)
 	if conf.hasReducer() {
@@ -329,8 +347,6 @@ func runMapReduce(
 	}
 	if conf.hasOutput() {
 		log.Printf("  output:   %s", conf.output)
-	} else {
-		log.Print("  output:   (none)")
 	}
 	log.Printf("  memory:   %s", conf.memoryString)
 	log.Printf("  tempdir:  %s", conf.tempDir)
@@ -340,9 +356,25 @@ func runMapReduce(
 	log.Print("")
 	log.Print("running mapper stage")
 	log.Print("")
+	var in input
+	if conf.hasInput() {
+		in = newInput(conf.input)
+	}
+	var out output
+	if conf.hasOutput() {
+		out = newOutput(conf)
+	}
+	var buf buffers
+	if conf.hasReducer() {
+		buf = newBuffer(conf)
+	}
 	startTimeMappers := time.Now()
-	buffers, err := runMappers(conf, mapper)
-	if err != nil {
+	if err := runWorkers(
+		conf.mappers,
+		func(c Context) error {
+			return mapper(c, in, out, buf)
+		},
+	); err != nil {
 		rollback(once, done, err)
 	}
 	durationMappers := time.Since(startTimeMappers)
@@ -352,7 +384,12 @@ func runMapReduce(
 		log.Print("running reducer stage")
 		log.Print("")
 		startTimeReducers := time.Now()
-		if err := runReducers(conf, reducer, buffers); err != nil {
+		if err := runWorkers(
+			conf.reducers,
+			func(c Context) error {
+				return reducer(c, buf)
+			},
+		); err != nil {
 			rollback(once, done, err)
 		}
 		durationReducers = time.Since(startTimeReducers)
