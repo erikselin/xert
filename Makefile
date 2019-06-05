@@ -18,7 +18,7 @@ default:
 test: default
 	go test -v
 	cd cli && go test -v
-	cd cli && tests/run 4 1000 16m 16k
+	tests/run 4 1000 16m 16k
 
 dist:
 	mkdir ${PACKAGE}
@@ -31,6 +31,6 @@ dist:
 clean:
 	rm -rf ${BUILD_DIR}
 	rm -f *.tar.gz
-	rm -rf cli/tests/data-*
-	rm -f cli/tests/log-*
-	rm -rf cli/tests/output-*
+	rm -rf tests/data-*
+	rm -f tests/log-*
+	rm -rf tests/output-*
