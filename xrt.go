@@ -6,84 +6,68 @@ package xrt
 
 import "io"
 
-// RecordReader ...
-type RecordReader interface {
-
-	// Next ...
-	Next() bool
-
-	// Record ...
-	Record() []byte
-
-	// Err ...
-	Err() error
-}
-
-// RecordWriter ...
-type RecordWriter interface {
-
-	// Write ...
-	Write(int, []byte) error
-}
-
-// Config ...
-type Config struct {
-	Mappers  int
-	Reducers int
-	TempDir  string
-	Memory   string
-}
-
 // JobWithoutInputOutput ...
 type JobWithoutInputOutput interface {
 	WithInput(string) JobWithInput
 	WithOutput(string) JobWithOutput
-	RunMapJob(func(Context) error) error
+	RunMapJob(int, func(Context) error) error
 	RunMapReduceJob(
+		int,
 		func(Context, RecordWriter) error,
+		int,
 		func(Context, RecordReader) error,
 	) error
 }
 
 type jobWithoutInputOutput struct {
-	config Config
+	memory  string
+	tempDir string
 }
 
 func (j jobWithoutInputOutput) WithInput(input string) JobWithInput {
-	return jobWithInput{j.config, input}
+	return jobWithInput{j.memory, j.tempDir, input}
 }
 
 func (j jobWithoutInputOutput) WithOutput(output string) JobWithOutput {
-	return jobWithOutput{j.config, output}
+	return jobWithOutput{j.memory, j.tempDir, output}
 }
 
 func (j jobWithoutInputOutput) RunMapJob(
+	mappers int,
 	mapper func(Context) error,
 ) error {
 	return run(
-		j.config,
+		j.memory,
+		j.tempDir,
 		"",
 		"",
+		mappers,
 		func(c *context) error {
 			return mapper(c)
 		},
+		0,
 		nil,
 	)
 }
 
 func (j jobWithoutInputOutput) RunMapReduceJob(
+	mappers int,
 	mapper func(Context, RecordWriter) error,
+	reducers int,
 	reducer func(Context, RecordReader) error,
 ) error {
 	return run(
-		j.config,
+		j.memory,
+		j.tempDir,
 		"",
 		"",
+		mappers,
 		func(c *context) error {
 			return c.withRecordWriter(func(w RecordWriter) error {
 				return mapper(c, w)
 			})
 		},
+		reducers,
 		func(c *context) error {
 			return c.withRecordReader(func(r RecordReader) error {
 				return reducer(c, r)
@@ -93,43 +77,57 @@ func (j jobWithoutInputOutput) RunMapReduceJob(
 }
 
 // NewJob ...
-func NewJob(config Config) JobWithoutInputOutput {
-	return jobWithoutInputOutput{config}
+func NewJob(memory, tempDir string) JobWithoutInputOutput {
+	return jobWithoutInputOutput{memory, tempDir}
 }
 
 // JobWithInput ...
 type JobWithInput interface {
-	RunMapJob(func(Context, io.Reader) error) error
+	RunMapJob(int, func(Context, io.Reader) error) error
 	RunMapReduceJob(
+		int,
 		func(Context, io.Reader, RecordWriter) error,
+		int,
 		func(Context, RecordReader) error,
 	) error
 	WithOutput(string) JobWithInputOutput
 }
 
 type jobWithInput struct {
-	config Config
-	input  string
+	memory  string
+	tempDir string
+	input   string
 }
 
 func (j jobWithInput) WithOutput(output string) JobWithInputOutput {
-	return jobWithInputOutput{j.config, j.input, output}
+	return jobWithInputOutput{j.memory, j.tempDir, j.input, output}
 }
 
 func (j jobWithInput) RunMapJob(
+	mappers int,
 	mapper func(Context, io.Reader) error,
 ) error {
 	return run(
-		j.config,
+		j.memory,
+		j.tempDir,
 		j.input,
 		"",
+		mappers,
 		func(c *context) error {
 			return c.withInputReader(func(r io.Reader) error {
 				return mapper(c, r)
 			})
 		},
+		0,
 		nil,
 	)
+}
+
+func runMapReduce(memory string, tempDir string, input string, output string, mappers int, mapper func(*context) error, reducers int, reducer func(*context) error) error {
+	if reducers <= 0 || reducer == nil {
+		return err
+	}
+	return run(memory, tempDir, input, output, mappers, mapper, reducers, reducer)
 }
 
 func (j jobWithInput) RunMapReduceJob(
@@ -272,12 +270,22 @@ func (j jobWithInputOutput) RunMapReduceJob(
 }
 
 func run(
-	config Config,
+	memory string,
+	tempDir string,
 	input string,
 	output string,
+	mappers int,
 	mapper func(*context) error,
+	reducers int,
 	reducer func(*context) error,
 ) error {
+	conf, err := newConfig(input, output, config)
+	if err != nil {
+		return err
+	}
+	if err := conf.setupFileSystem(); err != nil {
+		return err
+	}
 	//	var once sync.Once
 	//	done := make(chan struct{})
 	//	startTime := time.Now()

@@ -1,5 +1,25 @@
 package xrt
 
+// RecordReader ...
+type RecordReader interface {
+
+	// Next ...
+	Next() bool
+
+	// Record ...
+	Record() []byte
+
+	// Err ...
+	Err() error
+}
+
+// RecordWriter ...
+type RecordWriter interface {
+
+	// Write ...
+	Write(int, []byte) error
+}
+
 //import (
 //	"bufio"
 //	"fmt"
