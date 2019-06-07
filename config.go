@@ -8,16 +8,21 @@ import (
 	"path/filepath"
 	"regexp"
 	"strconv"
+	"time"
 )
 
 // config ...
 type config struct {
-	input        string
-	mappers      int
+	startTime    time.Time
 	memoryString string
-	output       string
-	reducers     int
 	tempDir      string
+	input        string
+	output       string
+	mappers      int
+	mapper       func(c *context) error
+	reducers     int
+	reducer      func(c *context) error
+	onError      func()
 	inputRoot    string
 	inputRegex   *regexp.Regexp
 	memory       int
@@ -27,15 +32,76 @@ type config struct {
 	tempOutput   string
 }
 
-func newConfig(input, output string, reducer bool, config Config) (*config, error) {
+func (c *config) hasInput() bool {
+	return len(c.input) > 0
+}
+
+func (c *config) hasOutput() bool {
+	return len(c.output) > 0
+}
+
+func (c *config) hasReducer() bool {
+	return c.reducer != nil
+}
+
+func (c *config) setupFileSystem() error {
+	_, err := os.Stat(c.output)
+	if c.hasOutput() && err == nil {
+		return fmt.Errorf("output=\"%s\" already exists", c.output)
+	}
+	if c.tempRoot, err = ioutil.TempDir(c.tempDir, "xrt-"); err != nil {
+		return err
+	}
+	c.tempScratch = path.Join(c.tempRoot, "scratch")
+	if err := os.Mkdir(c.tempScratch, 0700); err != nil {
+		return err
+	}
+	if c.hasOutput() {
+		c.tempOutput = path.Join(c.tempRoot, "output")
+		if err := os.Mkdir(c.tempOutput, 0700); err != nil {
+			return err
+		}
+	}
+	if c.hasReducer() {
+		c.tempSpill = path.Join(c.tempRoot, "spill")
+		if err = os.Mkdir(c.tempSpill, 0700); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func newConfig(
+	memory string,
+	tempDir string,
+	input string,
+	output string,
+	mappers int,
+	mapper func(*context) error,
+	reducers int,
+	reducer func(*context) error,
+	onError func(),
+) (*config, error) {
 	var err error
 	conf := &config{
+		startTime:    time.Now(),
+		memoryString: memory,
+		tempDir:      tempDir,
 		input:        input,
-		mappers:      config.Mappers,
-		memoryString: config.Memory,
 		output:       output,
-		reducers:     config.Reducers,
-		tempDir:      config.TempDir,
+		mappers:      mappers,
+		mapper:       mapper,
+		reducers:     reducers,
+		reducer:      reducer,
+		onError:      onError,
+	}
+	if conf.hasReducer() {
+		if conf.memory = parseMemory(conf.memoryString); conf.memory < 0 {
+			return nil, fmt.Errorf(
+				"error parsing memory=\"%s\"",
+				conf.memoryString,
+			)
+		}
 	}
 	if conf.hasInput() {
 		if conf.input, err = filepath.Abs(conf.input); err != nil {
@@ -48,83 +114,29 @@ func newConfig(input, output string, reducer bool, config Config) (*config, erro
 			return nil, fmt.Errorf("error parsing input: %v", err)
 		}
 	}
-	if len(conf.memoryString) == 0 {
-		conf.memoryString = defaultMemoryString
-	}
-	if conf.memory = parseMemory(conf.memoryString); conf.memory < 0 {
-		return nil, fmt.Errorf(
-			"error parsing memory string: \"%s\"",
-			conf.memoryString,
-		)
-	}
-	if conf.mappers <= 0 {
-		conf.mappers = defaultMappers
-	}
-	if conf.reducers <= 0 {
-		conf.reducers = defaultReducers
-	}
 	if conf.hasOutput() {
 		if conf.output, err = filepath.Abs(conf.output); err != nil {
 			return nil, fmt.Errorf("error parsing output: %v", err)
 		}
 	}
-	return conf, nil
-}
-
-func (c *config) hasInput() bool {
-	return len(c.input) > 0
-}
-
-func (c *config) hasOutput() bool {
-	return len(c.output) > 0
-}
-
-func configFileSystem(conf *config) error {
-	if _, err := os.Stat(conf.output); c.hasOutput() && err == nil {
+	if conf.mappers <= 0 {
 		return nil, fmt.Errorf(
-			"%s: --%s directory %s already exists",
-			conf.arg0,
-			argOutput,
-			conf.output,
+			"mappers=%d must be set to one or more",
+			conf.mappers,
 		)
-	}
-	var err error
-	if conf.tempDir, err = ioutil.TempDir(conf.tempRoot, "xrt-"); err != nil {
-		return fmt.Errorf(
-			"xrt: failed creating new directory in '%s' - %v",
-			conf.tempRoot,
-			err,
-		)
-	}
-	conf.tempScratch = path.Join(conf.tempDir, "scratch")
-	if err := os.Mkdir(conf.tempScratch, 0700); err != nil {
-		return fmt.Errorf(
-			"xrt: failed setup of temporary scratch directory '%s' - %v",
-			conf.tempScratch,
-			err,
-		)
-	}
-	if conf.hasOutput() {
-		conf.tempOutput = path.Join(conf.tempDir, "output")
-		if err := os.Mkdir(conf.tempOutput, 0700); err != nil {
-			return fmt.Errorf(
-				"xrt: failed setup of temporary output directory '%s' - %v",
-				conf.tempOutput,
-				err,
-			)
-		}
 	}
 	if conf.hasReducer() {
-		conf.tempSpill = path.Join(conf.tempDir, "spill")
-		if err = os.Mkdir(conf.tempSpill, 0700); err != nil {
-			return fmt.Errorf(
-				"xrt: failed setup of temporary spill directory '%s' - %v",
-				conf.tempSpill,
-				err,
+		if conf.reducers <= 0 {
+			return nil, fmt.Errorf(
+				"reducers=%d must be set to one or more",
+				conf.reducers,
 			)
 		}
 	}
-	return nil
+	if conf.onError == nil {
+		conf.onError = func() {}
+	}
+	return conf, nil
 }
 
 // extractRegex ...
@@ -179,7 +191,7 @@ func extractRoot(input string) (string, error) {
 // a integer representign the number of bytes.
 // For example:
 //    parseMemory("1k") = 1024
-//    parseMemory("1k") = 1048576
+//    parseMemory("1m") = 1048576
 // -1 is returned if a bad memory string was provided.
 func parseMemory(v string) int {
 	var m uint

@@ -1,61 +1,80 @@
 package xrt
 
-//const (
-//	chunkSize       int64 = 16 << 20 // 16mb
-//	recordSeparator byte  = '\n'
-//)
-//
-//type input struct {
+import (
+	"io"
+	"io/ioutil"
+	"os"
+	"path"
+	"regexp"
+)
+
+const (
+	splitSize       int64 = 16 << 20 // 16mb
+	recordSeparator byte  = '\n'
+)
+
+type Input interface {
+	NewInputReader(int) io.Reader
+}
+
+func NewInput(readers int, input string) (Input, error) {
+
+}
+
+// NewInputReader ...
+//func (i *input) NewInputReader() io.Reader {
+//	return inputReader{i.splits}
 //}
-//
-//func (in *input) newWorkerInput(conf WorkerConfig) workerInput {
+
+// NewInput ...
+//func NewInput(input string) Input {
+//	splits := make(chan *split, conf.mappers)
+//	go startWalk(conf.inputRoot, conf.inputRegex, splits)
+//	return &input{splits}
 //}
-//
-//func newInput(input string) *input {
-//}
-//
-//type workerInput struct {
-//	splits chan *split
-//	split  *split
-//	pos    int
-//	f      *os.File
-//}
-//
-//// Read ...
-//func (wi *workerInput) Read(p []byte) (int, error) {
-//	j := 0
-//	for j < len(p) {
-//		if i.split == nil {
-//			return j, io.EOF
-//		}
-//		n, err := i.split.writeTo(p[j:])
-//		j += n
-//		if err != nil {
-//			if err == io.EOF {
-//				i.nextSplit()
-//			} else {
-//				return -1, err
-//			}
-//		}
-//	}
-//	return j, nil
-//}
-//
-//func newInput(splits chan *split) input {
-//	i := input{
-//		splits: splits,
-//	}
-//	i.nextSplit()
-//	return i
-//}
-//
-//type split struct {
-//	filename string
-//	start    int64
-//	end      int64
-//	err      error
-//}
-//
+
+func startWalk(root string, regex *regexp.Regexp, splits chan *split) {
+	if err := walk(root, regex, splits); err != nil {
+		splits <- &split{"", -1, -1, err}
+	}
+	close(splits)
+}
+
+func walk(filename string, regex *regexp.Regexp, splits chan *split) error {
+	s, err := os.Stat(filename)
+	if err != nil {
+		return err
+	}
+	if s.Mode().IsRegular() && regex.Match([]byte(filename)) {
+		start := int64(0)
+		for start+splitSize < s.Size() {
+			splits <- &split{filename, start, start + splitSize, nil}
+			start += splitSize
+		}
+		splits <- &split{filename, start, s.Size(), nil}
+		return nil
+	}
+	if s.Mode().IsDir() {
+		fis, err := ioutil.ReadDir(filename)
+		if err != nil {
+			return err
+		}
+		for _, fi := range fis {
+			if err := walk(path.Join(filename, fi.Name()), regex, splits); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+type split struct {
+	filename string
+	start    int64
+	end      int64
+	err      error
+}
+
 //func (s *split) writeTo(p []byte) (int, error) {
 //	if pos == 0 {
 //
@@ -105,56 +124,69 @@ package xrt
 //		}
 //	}
 //}
-//
-//func enumerateChunks(input string) (chan *chunk, error) {
-//	abs, err := filepath.Abs(input)
-//	if err != nil {
-//		return nil, err
-//	}
-//	regex, err := extractRegex(abs)
-//	if err != nil {
-//		return nil, err
-//	}
-//	root, err := extractRoot(abs)
-//	if err != nil {
-//		return nil, err
-//	}
-//	chunks := make(chan *chunk)
-//	go startWalk(root, regex, chunks)
-//	return chunks, nil
-//}
-//
-//func startWalk(root string, regex *regexp.Regexp, chunks chan *chunk) {
-//	if err := walk(root, regex, chunks); err != nil {
-//		chunks <- &chunk{"", -1, -1, err}
-//	}
-//	close(chunks)
-//}
-//
-//func walk(filename string, regex *regexp.Regexp, chunks chan *chunk) error {
-//	s, err := os.Stat(filename)
-//	if err != nil {
-//		return err
-//	}
-//	if s.Mode().IsRegular() && regex.Match([]byte(filename)) {
-//		start := int64(0)
-//		for start+chunkSize < s.Size() {
-//			chunks <- &chunk{filename, start, start + chunkSize, nil}
-//			start += chunkSize
-//		}
-//		chunks <- &chunk{filename, start, s.Size(), nil}
-//		return nil
-//	}
-//	if s.Mode().IsDir() {
-//		fis, err := ioutil.ReadDir(filename)
-//		if err != nil {
-//			return err
-//		}
-//		for _, fi := range fis {
-//			if err := walk(path.Join(filename, fi.Name()), regex, chunks); err != nil {
-//				return err
-//			}
-//		}
-//	}
-//	return nil
-//}
+
+type inputReader struct {
+	input    *input
+	pos      int
+	current  *split
+	previous *split
+	f        *os.File
+}
+
+func (i *inputReader) Read(b []byte) (int, error) {
+	n := 0
+	for n < len(b) {
+
+	}
+
+	var more bool
+	var err error
+	n := 0
+	for n < len(b) {
+		if i.current == nil || i.current.start >= i.current.end {
+			i.previous = i.current
+			i.current, more = i.input.next()
+			if !more {
+				return n, io.EOF
+			}
+			if i.previous != nil && i.previous.filename != i.current.filename {
+				if i.f, err = os.Open(i.current.filename); err != nil {
+					return -1, err
+				}
+			}
+			if _, err := i.f.Seek(i.current.start); err != nil {
+				return -1, err
+			}
+			if i.current.start > 0 {
+				buf := make([]byte, 1)
+				for {
+					i.current.start++
+					_, err := f.Read(buf)
+					if err == io.EOF {
+						return n, io.EOF
+					}
+					if err != nil {
+						return -1, err
+					}
+					if i.current.start == i.current.end {
+						// TODO get next split
+					}
+					if buf[0] == recordSeparator {
+						break
+					}
+				}
+			}
+		}
+		remaining := i.current.end - i.current.start
+		read := len(b) - n
+		if read > remaining {
+			read = remaining
+		}
+		m, err := i.f.Read(b[n:read])
+		if err != nil {
+			return -1, err
+		}
+		n += m
+	}
+	return n, nil
+}

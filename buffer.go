@@ -1,7 +1,13 @@
 package xrt
 
-// RecordReader ...
-type RecordReader interface {
+// Buffer ...
+type Buffer interface {
+	NewBufferWriter(int) (BufferWriter, error)
+	NewBufferReader(int) (BufferReader, error)
+}
+
+// BufferReader ...
+type BufferReader interface {
 
 	// Next ...
 	Next() bool
@@ -13,11 +19,16 @@ type RecordReader interface {
 	Err() error
 }
 
-// RecordWriter ...
-type RecordWriter interface {
+// BufferWriter ...
+type BufferWriter interface {
 
 	// Write ...
 	Write(int, []byte) error
+}
+
+// NewBuffer ...
+func NewBuffer(memory, spillDir string, writers, readers int) Buffer {
+
 }
 
 //import (
