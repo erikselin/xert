@@ -1,10 +1,24 @@
 package xrt
 
-type buffer struct {
+import "path"
+
+type buffers struct {
+	data [][]*buffer
 }
 
-func (b *buffer) newBufferReader() *bufferReader {
-
+func (b *buffers) newBufferReader(workerID int) *bufferReader {
+	scanners := make([]scanner, 0)
+	for _, d := range b.data {
+		scanners = append(scanners, newMemoryScanner(d[workerID]))
+		if d.spills > 0 {
+			filename := path.Join(conf.tempSpill, "spill-0")
+			scanners = append(scanners, newFileScanner(filename))
+		}
+	}
+	m, err := newMerger(scanners)
+	if err != nil {
+		return err
+	}
 }
 
 func (b *buffer) newBufferWriter() *bufferWriter {
@@ -12,9 +26,22 @@ func (b *buffer) newBufferWriter() *bufferWriter {
 }
 
 type bufferReader struct {
+	ptr     int
+	current []byte
 }
 
 func (r *bufferReader) Read(b []byte) (int, error) {
+	for m.next() {
+		if _, err := wb.Write(m.nextRecord()); err != nil {
+			return err
+		}
+		if err := wb.WriteByte(recordDelimiter); err != nil {
+			return err
+		}
+	}
+	if err := m.err(); err != nil {
+		return err
+	}
 }
 
 type bufferWriter struct {
