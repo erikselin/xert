@@ -1,16 +1,32 @@
 package xrt
 
+type buffer struct {
+}
+
+func (b *buffer) newBufferReader() *bufferReader {
+
+}
+
+func (b *buffer) newBufferWriter() *bufferWriter {
+
+}
+
 type bufferReader struct {
 }
 
-func (b *bufferReader) Read(b []byte) (int, error) {
+func (r *bufferReader) Read(b []byte) (int, error) {
 }
 
 type bufferWriter struct {
 }
 
-func (b *bufferWriter) Write(b []byte) (int, error) {
+func (w *bufferWriter) Write(b []byte) (int, error) {
+	// TODO go through the entire b slice writing any records
+	// to the buffer and storing any remaining bytes for the next Write
+}
 
+func (w *bufferWriter) close() error {
+	// process remaining bytes?
 }
 
 //// Buffer ...

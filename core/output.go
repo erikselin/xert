@@ -3,10 +3,18 @@ package xrt
 type output interface {
 }
 
-func (out *output) Write(b []byte) (int, error) {
+func (out *output) newOutputWriter(workerID int) *outputWriter {
 
 }
 
-func newOutput(worker int, output string) *output {
+func newOutput(output string) *output {
+
+}
+
+type outputWriter struct {
+	workerID int
+}
+
+func (w *outputWriter) Write(p []byte) (int, error) {
 
 }

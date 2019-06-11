@@ -110,16 +110,14 @@ func newConfig(
 		if _, err := os.Stat(conf.output); err == nil {
 			return nil, fmt.Errorf("output=\"%s\" already exists", conf.output)
 		}
-		conf.tempOutput = path.Join(conf.tempRoot, "output")
-		if err := os.Mkdir(conf.tempOutput, 0700); err != nil {
-			return nil, err
-		}
 	}
-	if conf.hasReducer() {
-		conf.tempSpill = path.Join(conf.tempRoot, "spill")
-		if err = os.Mkdir(conf.tempSpill, 0700); err != nil {
-			return nil, err
-		}
+	conf.tempOutput = path.Join(conf.tempRoot, "output")
+	if err := os.Mkdir(conf.tempOutput, 0700); err != nil {
+		return nil, err
+	}
+	conf.tempSpill = path.Join(conf.tempRoot, "spill")
+	if err = os.Mkdir(conf.tempSpill, 0700); err != nil {
+		return nil, err
 	}
 	return conf, nil
 }

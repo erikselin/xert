@@ -1,6 +1,7 @@
 package xrt
 
 import (
+	"io"
 	"io/ioutil"
 	"os"
 	"path"
@@ -15,8 +16,8 @@ type input struct {
 	splits chan *split
 }
 
-func (in *input) newReader() *inputReader {
-
+func (in *input) newInputReader() *inputReader {
+	return &inputReader{in.splits}
 }
 
 func newInput(conf *config) *input {
@@ -63,14 +64,37 @@ func walk(conf *config, splits chan *split) error {
 }
 
 type inputReader struct {
+	splits chan *split
+	cur    *split
+	ptr    int64
+	fd     *os.File
 }
 
-func (r *inputReader) Read(b []byte) (int, error) {
+func (r *inputReader) Read(p []byte) (int, error) {
+	if r.cur == nil {
+		return 0, io.EOF
+	}
+	n := 0
+	for n < len(p) {
+		// copy min(len(p), r.end-r.ptr) to p
+		if n >= len(p) {
+			// buffer is full, return
+			return n, nil
+		}
 
-}
+		// we could have copied zero, meaning that we're
+		// in the process of looking for newline
 
-func newInputReader() *inputReader {
+		// copy until newline
 
+		next, ok := <-r.splits
+		if !ok {
+			return 0, io.EOF
+		}
+		// fd caching
+		// + advance to split
+		// + advance to newline
+	}
 }
 
 type split struct {
