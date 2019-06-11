@@ -1,5 +1,18 @@
 package xrt
 
+type bufferReader struct {
+}
+
+func (b *bufferReader) Read(b []byte) (int, error) {
+}
+
+type bufferWriter struct {
+}
+
+func (b *bufferWriter) Write(b []byte) (int, error) {
+
+}
+
 //// Buffer ...
 //type Buffer interface {
 //	NewBufferWriter(int) (BufferWriter, error)

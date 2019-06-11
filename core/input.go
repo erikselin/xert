@@ -4,7 +4,6 @@ import (
 	"io/ioutil"
 	"os"
 	"path"
-	"regexp"
 )
 
 const (
@@ -12,34 +11,30 @@ const (
 	recordSeparator byte  = '\n'
 )
 
-//type Input interface {
-//	NewInputReader(int) io.Reader
-//}
-//
-//func NewInput(readers int, input string) (Input, error) {
-//
-//}
+type input struct {
+	splits chan *split
+}
 
-// NewInputReader ...
-//func (i *input) NewInputReader() io.Reader {
-//	return inputReader{i.splits}
-//}
+func (in *input) newReader() *inputReader {
 
-// NewInput ...
-//func NewInput(input string) Input {
-//	splits := make(chan *split, conf.mappers)
-//	go startWalk(conf.inputRoot, conf.inputRegex, splits)
-//	return &input{splits}
-//}
+}
 
-func startWalk(root string, regex *regexp.Regexp, splits chan *split) {
-	if err := walk(root, regex, splits); err != nil {
-		splits <- &split{"", -1, -1, err}
+func newInput(conf *config) *input {
+	splits := make(chan *split)
+	go startWalk(conf.inputRoot, conf.inputRegex, splits)
+	return &input{splits}
+}
+
+func startWalk(conf *config, splits chan *split) {
+	if conf.hasInput() {
+		if err := walk(conf, splits); err != nil {
+			splits <- &split{"", -1, -1, err}
+		}
 	}
 	close(splits)
 }
 
-func walk(filename string, regex *regexp.Regexp, splits chan *split) error {
+func walk(conf *config, splits chan *split) error {
 	s, err := os.Stat(filename)
 	if err != nil {
 		return err
@@ -65,6 +60,17 @@ func walk(filename string, regex *regexp.Regexp, splits chan *split) error {
 		}
 	}
 	return nil
+}
+
+type inputReader struct {
+}
+
+func (r *inputReader) Read(b []byte) (int, error) {
+
+}
+
+func newInputReader() *inputReader {
+
 }
 
 type split struct {

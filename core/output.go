@@ -1,9 +1,12 @@
 package xrt
 
-//type Output interface {
-//	NewOutputWriter(int) io.WriteCloser
-//}
-//
-//func NewOutput(writers int, output string) (Output, error) {
-//
-//}
+type output interface {
+}
+
+func (out *output) Write(b []byte) (int, error) {
+
+}
+
+func newOutput(worker int, output string) *output {
+
+}
