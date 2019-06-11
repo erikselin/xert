@@ -4,252 +4,159 @@
 //
 package xrt
 
-//import (
-//	"errors"
-//	"fmt"
-//	"io"
-//	"log"
-//	"os"
-//	"os/signal"
-//	"sync"
-//)
-//
-//// RunM ...
-//func RunM(
-//	tempDir string,
-//	mappers int,
-//	mapper func(Context) error,
-//	onError func(),
-//) error {
-//	return run(
-//		"",
-//		tempDir,
-//		"",
-//		"",
-//		mappers,
-//		func(c *context) error {
-//			return mapper(c)
-//		},
-//		0,
-//		nil,
-//		onError,
-//	)
-//}
-//
-//// RunMI ...
-//func RunMI(
-//	tempDir string,
-//	input string,
-//	mappers int,
-//	mapper func(Context, io.Reader) error,
-//	onError func(),
-//) error {
-//	return run(
-//		"",
-//		tempDir,
-//		input,
-//		"",
-//		mappers,
-//		func(c *context) error {
-//			return c.withInputReader(func(r io.Reader) error {
-//				return mapper(c, r)
-//			})
-//		},
-//		0,
-//		nil,
-//		onError,
-//	)
-//}
-//
-//// RunMO ...
-//func RunMO(
-//	tempDir string,
-//	output string,
-//	mappers int,
-//	mapper func(Context, io.Writer) error,
-//	onError func(),
-//) error {
-//	return run(
-//		"",
-//		tempDir,
-//		"",
-//		output,
-//		mappers,
-//		func(c *context) error {
-//			return c.withOutputWriter(func(w io.Writer) error {
-//				return mapper(c, w)
-//			})
-//		},
-//		0,
-//		nil,
-//		onError,
-//	)
-//}
-//
-//// RunMIO ...
-//func RunMIO(
-//	tempDir string,
-//	input string,
-//	output string,
-//	mappers int,
-//	mapper func(Context, io.Reader, io.Writer) error,
-//	onError func(),
-//) error {
-//	return run(
-//		"",
-//		tempDir,
-//		input,
-//		output,
-//		mappers,
-//		func(c *context) error {
-//			return c.withInputReader(func(r io.Reader) error {
-//				return c.withOutputWriter(func(w io.Writer) error {
-//					return mapper(c, r, w)
-//				})
-//			})
-//		},
-//		0,
-//		nil,
-//		onError,
-//	)
-//}
-//
-//// RunMR ...
-//func RunMR(
-//	memory string,
-//	tempDir string,
-//	mappers int,
-//	mapper func(Context, RecordWriter) error,
-//	reducers int,
-//	reducer func(Context, RecordReader) error,
-//	onError func(),
-//) error {
-//	return run(
-//		memory,
-//		tempDir,
-//		"",
-//		"",
-//		mappers,
-//		func(c *context) error {
-//			return c.withRecordWriter(func(w RecordWriter) error {
-//				return mapper(c, w)
-//			})
-//		},
-//		reducers,
-//		func(c *context) error {
-//			return c.withRecordReader(func(r RecordReader) error {
-//				return reducer(c, r)
-//			})
-//		},
-//		onError,
-//	)
-//}
-//
-//// RunMRI ...
-//func RunMRI(
-//	memory string,
-//	tempDir string,
-//	input string,
-//	mappers int,
-//	mapper func(Context, io.Reader, RecordWriter) error,
-//	reducers int,
-//	reducer func(Context, RecordReader) error,
-//	onError func(),
-//) error {
-//	return run(
-//		memory,
-//		tempDir,
-//		input,
-//		"",
-//		mappers,
-//		func(c *context) error {
-//			return c.withInputReader(func(r io.Reader) error {
-//				return c.withRecordWriter(func(w RecordWriter) error {
-//					return mapper(c, r, w)
-//				})
-//			})
-//		},
-//		reducers,
-//		func(c *context) error {
-//			return c.withRecordReader(func(r RecordReader) error {
-//				return reducer(c, r)
-//			})
-//		},
-//		onError,
-//	)
-//}
-//
-//// RunMRO ...
-//func RunMRO(
-//	memory string,
-//	tempDir string,
-//	output string,
-//	mappers int,
-//	mapper func(Context, RecordWriter) error,
-//	reducers int,
-//	reducer func(Context, RecordReader, io.Writer) error,
-//	onError func(),
-//) error {
-//	return run(
-//		memory,
-//		tempDir,
-//		"",
-//		output,
-//		mappers,
-//		func(c *context) error {
-//			return c.withRecordWriter(func(w RecordWriter) error {
-//				return mapper(c, w)
-//			})
-//		},
-//		reducers,
-//		func(c *context) error {
-//			return c.withRecordReader(func(r RecordReader) error {
-//				return c.withOutputWriter(func(w io.Writer) error {
-//					return reducer(c, r, w)
-//				})
-//			})
-//		},
-//		onError,
-//	)
-//}
-//
-//// RunMRIO ...
-//func RunMRIO(
-//	memory string,
-//	tempDir string,
-//	input string,
-//	output string,
-//	mappers int,
-//	mapper func(Context, io.Reader, RecordWriter) error,
-//	reducers int,
-//	reducer func(Context, RecordReader, io.Writer) error,
-//	onError func(),
-//) error {
-//	return run(
-//		memory,
-//		tempDir,
-//		input,
-//		output,
-//		mappers,
-//		func(c *context) error {
-//			return c.withInputReader(func(r io.Reader) error {
-//				return c.withRecordWriter(func(w RecordWriter) error {
-//					return mapper(c, r, w)
-//				})
-//			})
-//		},
-//		reducers,
-//		func(c *context) error {
-//			return c.withRecordReader(func(r RecordReader) error {
-//				return c.withOutputWriter(func(w io.Writer) error {
-//					return reducer(c, r, w)
-//				})
-//			})
-//		},
-//		onError,
-//	)
-//}
-//
+import (
+	"errors"
+	"flag"
+	"fmt"
+	"io"
+	"log"
+	"os"
+	"os/signal"
+)
+
+var (
+	// CommandLine ...
+	CommandLine = flag.NewFlagSet(os.Args[0], flag.ExitOnError)
+
+	// DefaultMappers ...
+	DefaultMappers = 1
+
+	// DefaultMemory ...
+	DefaultMemory = "16m"
+
+	// DefaultReducers ...
+	DefaultReducers = 1
+
+	// DefaultTempDir ...
+	DefaultTempDir = os.TempDir()
+
+	// Log ...
+	Log = log.New(os.Stderr, "", log.LstdFlags)
+
+	// Setup ...
+	Setup = func() error { return nil }
+
+	// OnError ...
+	OnError = func() error { return nil }
+
+	// OnSuccess ...
+	OnSuccess = func() error { return nil }
+
+	// Version ...
+	Version = "0.4.0"
+)
+
+const (
+	argInput        = "input"
+	argMappers      = "mappers"
+	argMemoryString = "memory"
+	argOutput       = "output"
+	argReducers     = "reducers"
+	argShowVersion  = "version"
+	argTempDir      = "tempdir"
+)
+
+// Main ...
+func Main(
+	mapper func(Context, io.Reader, io.Writer) error,
+	reducer func(Context, io.Reader, io.Writer) error,
+) {
+	if len(os.Args) <= 1 {
+		CommandLine.Usage()
+		os.Exit(1)
+	}
+	conf, err := parseConfig()
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+	if conf.showVersion {
+		fmt.Println(Version)
+		return
+	}
+	if err := Setup(); err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+	startInterruptHandler(conf)
+	//if err := run(conf, mapper, reducer); err != nil {
+	//	rollback(conf, err)
+	//}
+}
+
+func parseConfig() (*config, error) {
+	input := CommandLine.String(
+		argInput,
+		"",
+		"input path",
+	)
+	mappers := CommandLine.Int(
+		argMappers,
+		DefaultMappers,
+		"number of mappers",
+	)
+	memoryString := CommandLine.String(
+		argMemoryString,
+		DefaultMemory,
+		"memory allocation limit",
+	)
+	output := CommandLine.String(
+		argOutput,
+		"",
+		"output directory",
+	)
+	reducers := CommandLine.Int(
+		argReducers,
+		DefaultReducers,
+		"number of reducers",
+	)
+	showVersion := CommandLine.Bool(
+		argShowVersion,
+		false,
+		"show runtime version",
+	)
+	tempDir := CommandLine.String(
+		argTempDir,
+		DefaultTempDir,
+		"temporary directory",
+	)
+	CommandLine.Parse(os.Args[1:])
+	return newConfig(
+		*input,
+		*mappers,
+		*memoryString,
+		*output,
+		*reducers,
+		*showVersion,
+		*tempDir,
+	)
+}
+
+func startInterruptHandler(conf *config) {
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt)
+	go func() {
+		<-c
+		rollback(conf, errors.New("received interrupt - aborting job"))
+	}()
+}
+
+func rollback(conf *config, err error) {
+	conf.rollbackOnce.Do(func() {
+		log.Print("error - attempting rollback")
+		log.Print("")
+		log.Print(err)
+		if err := OnError(); err != nil {
+			log.Print("")
+			log.Printf("additional error occured in OnError handler: %v", err)
+		}
+		log.Print("")
+		cleanup(conf)
+		log.Print("failed")
+		os.Exit(1)
+	})
+}
+
 //func run(
 //	memory string,
 //	tempDir string,
@@ -388,21 +295,21 @@ package xrt
 //	})
 //}
 //
-//// cleanup removes any remaining temporary files.
-//func cleanup(conf *config) error {
-//	// BUG this could break on windows since it does not allow removal of open
-//	// files and by the time this is called it is possible fds in the tempdir
-//	// are still open.
-//	if err := os.RemoveAll(conf.tempRoot); err != nil {
-//		return fmt.Errorf(
-//			"  failed to remove temporary data directory %s - %v",
-//			conf.tempRoot,
-//			err,
-//		)
-//	}
-//	return nil
-//}
-//
+// cleanup removes any remaining temporary files.
+func cleanup(conf *config) error {
+	// BUG this could break on windows since it does not allow removal of open
+	// files and by the time this is called it is possible fds in the tempdir
+	// are still open.
+	if err := os.RemoveAll(conf.tempRoot); err != nil {
+		return fmt.Errorf(
+			"  failed to remove temporary data directory %s - %v",
+			conf.tempRoot,
+			err,
+		)
+	}
+	return nil
+}
+
 //////func runMany(workers int, worker func(context) error) error {
 //////	errc := make(chan error)
 //////	for i := 0; i < workers; i++ {

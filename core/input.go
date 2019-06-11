@@ -1,7 +1,6 @@
 package xrt
 
 import (
-	"io"
 	"io/ioutil"
 	"os"
 	"path"
@@ -13,13 +12,13 @@ const (
 	recordSeparator byte  = '\n'
 )
 
-type Input interface {
-	NewInputReader(int) io.Reader
-}
-
-func NewInput(readers int, input string) (Input, error) {
-
-}
+//type Input interface {
+//	NewInputReader(int) io.Reader
+//}
+//
+//func NewInput(readers int, input string) (Input, error) {
+//
+//}
 
 // NewInputReader ...
 //func (i *input) NewInputReader() io.Reader {
@@ -125,68 +124,68 @@ type split struct {
 //	}
 //}
 
-type inputReader struct {
-	input    *input
-	pos      int
-	current  *split
-	previous *split
-	f        *os.File
-}
-
-func (i *inputReader) Read(b []byte) (int, error) {
-	n := 0
-	for n < len(b) {
-
-	}
-
-	var more bool
-	var err error
-	n := 0
-	for n < len(b) {
-		if i.current == nil || i.current.start >= i.current.end {
-			i.previous = i.current
-			i.current, more = i.input.next()
-			if !more {
-				return n, io.EOF
-			}
-			if i.previous != nil && i.previous.filename != i.current.filename {
-				if i.f, err = os.Open(i.current.filename); err != nil {
-					return -1, err
-				}
-			}
-			if _, err := i.f.Seek(i.current.start); err != nil {
-				return -1, err
-			}
-			if i.current.start > 0 {
-				buf := make([]byte, 1)
-				for {
-					i.current.start++
-					_, err := f.Read(buf)
-					if err == io.EOF {
-						return n, io.EOF
-					}
-					if err != nil {
-						return -1, err
-					}
-					if i.current.start == i.current.end {
-						// TODO get next split
-					}
-					if buf[0] == recordSeparator {
-						break
-					}
-				}
-			}
-		}
-		remaining := i.current.end - i.current.start
-		read := len(b) - n
-		if read > remaining {
-			read = remaining
-		}
-		m, err := i.f.Read(b[n:read])
-		if err != nil {
-			return -1, err
-		}
-		n += m
-	}
-	return n, nil
-}
+//type inputReader struct {
+//	input    *input
+//	pos      int
+//	current  *split
+//	previous *split
+//	f        *os.File
+//}
+//
+//func (i *inputReader) Read(b []byte) (int, error) {
+//	n := 0
+//	for n < len(b) {
+//
+//	}
+//
+//	var more bool
+//	var err error
+//	n := 0
+//	for n < len(b) {
+//		if i.current == nil || i.current.start >= i.current.end {
+//			i.previous = i.current
+//			i.current, more = i.input.next()
+//			if !more {
+//				return n, io.EOF
+//			}
+//			if i.previous != nil && i.previous.filename != i.current.filename {
+//				if i.f, err = os.Open(i.current.filename); err != nil {
+//					return -1, err
+//				}
+//			}
+//			if _, err := i.f.Seek(i.current.start); err != nil {
+//				return -1, err
+//			}
+//			if i.current.start > 0 {
+//				buf := make([]byte, 1)
+//				for {
+//					i.current.start++
+//					_, err := f.Read(buf)
+//					if err == io.EOF {
+//						return n, io.EOF
+//					}
+//					if err != nil {
+//						return -1, err
+//					}
+//					if i.current.start == i.current.end {
+//						// TODO get next split
+//					}
+//					if buf[0] == recordSeparator {
+//						break
+//					}
+//				}
+//			}
+//		}
+//		remaining := i.current.end - i.current.start
+//		read := len(b) - n
+//		if read > remaining {
+//			read = remaining
+//		}
+//		m, err := i.f.Read(b[n:read])
+//		if err != nil {
+//			return -1, err
+//		}
+//		n += m
+//	}
+//	return n, nil
+//}
