@@ -1,12 +1,15 @@
 package xrt
 
-import "path"
+import (
+	"io"
+	"path"
+)
 
 type buffers struct {
 	data [][]*buffer
 }
 
-func (b *buffers) newBufferReader(workerID int) *bufferReader {
+func (b *buffers) newBufferReader(workerID int) (*bufferReader, error) {
 	scanners := make([]scanner, 0)
 	for _, d := range b.data {
 		scanners = append(scanners, newMemoryScanner(d[workerID]))
@@ -17,39 +20,95 @@ func (b *buffers) newBufferReader(workerID int) *bufferReader {
 	}
 	m, err := newMerger(scanners)
 	if err != nil {
-		return err
+		return nil, err
 	}
+	return &bufferReader{merger: m}, nil
 }
 
-func (b *buffer) newBufferWriter() *bufferWriter {
-
+func (b *buffer) newBufferWriter(workerID) *bufferWriter {
+	return &bufferWriter{
+		data: b.data[workerID],
+	}
 }
 
 type bufferReader struct {
-	ptr     int
-	current []byte
+	recordsRead int
+	ptr         int
+	current     []byte
+	merger      *merger
 }
 
-func (r *bufferReader) Read(b []byte) (int, error) {
-	for m.next() {
-		if _, err := wb.Write(m.nextRecord()); err != nil {
-			return err
+func (r *bufferReader) Read(p []byte) (int, error) {
+	n := 0
+	for n < len(p) {
+		if r.ptr >= len(r.current) {
+			if r.recordsRead > 0 {
+				p[n] = recordDelimiter
+				n++
+			}
+			if !r.merger.next() {
+				if err := r.merger.err(); err != nil {
+					return n, err
+				}
+				return n, io.EOF
+			}
+			r.current = r.merger.nextRecord()
+			r.ptr = 0
+			r.recordsRead++
 		}
-		if err := wb.WriteByte(recordDelimiter); err != nil {
-			return err
+		m := len(r.current) - r.ptr
+		if m > len(p)-n {
+			m = len(p) - n
 		}
+		copy(p[n:], record[r.ptr:r.ptr+m])
+		n += m
+		r.ptr += m
 	}
-	if err := m.err(); err != nil {
-		return err
-	}
+	return n, nil
 }
 
 type bufferWriter struct {
+	data    []*buffer
+	partial []byte
 }
 
-func (w *bufferWriter) Write(b []byte) (int, error) {
+func (w *bufferWriter) Write(p []byte) (int, error) {
 	// TODO go through the entire b slice writing any records
 	// to the buffer and storing any remaining bytes for the next Write
+	ptr := 0
+	for ptr < len(p) {
+		n := 0
+		for {
+			b := p[ptr]
+			if b == tab { //todo this might not be correct syntax
+				// skip delimiter,
+				// done parsing number
+				ptr++
+				break
+			}
+			if b < 48 || 57 < b {
+				// err cannot parse int
+			}
+			// continue parsing int
+			ptr++
+		}
+		start := ptr
+		end := ptr
+		for {
+			b := p[ptr]
+			if b == recordDelimiter { //todo this might not be correct syntax
+				// done parsing record
+				end = ptr
+				// skip delimiter,
+				ptr++
+				break
+			}
+			ptr++
+		}
+		if err := w.data[n].add(p[start:end]); err != nil {
+			return err
+		}
+	}
 }
 
 func (w *bufferWriter) close() error {
