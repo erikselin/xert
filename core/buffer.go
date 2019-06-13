@@ -32,7 +32,7 @@ func (b *buffer) newBufferWriter(workerID) *bufferWriter {
 }
 
 type bufferReader struct {
-	recordsRead int
+	recordsRead int // TODO do we really need this
 	ptr         int
 	current     []byte
 	merger      *merger
@@ -68,8 +68,9 @@ func (r *bufferReader) Read(p []byte) (int, error) {
 }
 
 type bufferWriter struct {
-	data    []*buffer
-	partial []byte
+	data   []*buffer
+	key    int
+	record []byte
 }
 
 func (w *bufferWriter) Write(p []byte) (int, error) {

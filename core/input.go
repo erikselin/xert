@@ -17,7 +17,7 @@ type input struct {
 }
 
 func (in *input) newInputReader() *inputReader {
-	return &inputReader{in.splits}
+	return &inputReader{in}
 }
 
 func newInput(conf *config) *input {
@@ -71,30 +71,36 @@ type inputReader struct {
 }
 
 func (r *inputReader) Read(p []byte) (int, error) {
-	if r.cur == nil {
-		return 0, io.EOF
-	}
 	n := 0
 	for n < len(p) {
-		// copy min(len(p), r.end-r.ptr) to p
-		if n >= len(p) {
-			// buffer is full, return
-			return n, nil
+		if r.cur.end-r.ptr <= 0 {
+			nxt, ok := <-r.splits
+			if !ok {
+				return n, io.EOF
+			}
+			if nxt.filename != r.cur.filename {
+				var err error
+				r.fd, err = os.Open(nxt.filename)
+				if err != nil {
+					return n, err
+				}
+			}
+			r.cur = nxt
+			// update start
+			// update end
 		}
-
-		// we could have copied zero, meaning that we're
-		// in the process of looking for newline
-
-		// copy until newline
-
-		next, ok := <-r.splits
-		if !ok {
-			return 0, io.EOF
+		m := len(p) - n
+		if m > r.cur.end-r.ptr {
+			m = r.cur.end - r.ptr
 		}
-		// fd caching
-		// + advance to split
-		// + advance to newline
+		s, err := r.fd.Read(p[n : n+m])
+		// TODO can this return io.EOF ?
+		n += s
+		if err != nil {
+			return n, err
+		}
 	}
+	return n, nil
 }
 
 type split struct {
